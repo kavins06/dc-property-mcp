@@ -63,6 +63,20 @@ export async function verifyLive({
         throw new Error("protected-resource metadata is invalid");
       }
 
+      const authorizationResponse = await fetch(
+        `${baseUrl}/.well-known/oauth-authorization-server`,
+        { headers },
+      );
+      const authorization = await authorizationResponse.json();
+      if (
+        authorizationResponse.status !== 200 ||
+        authorization.issuer !== metadata.authorization_servers[0] ||
+        typeof authorization.authorization_endpoint !== "string" ||
+        typeof authorization.token_endpoint !== "string"
+      ) {
+        throw new Error("authorization-server metadata proxy is invalid");
+      }
+
       const mcpResponse = await fetch(`${baseUrl}/mcp`, { headers });
       const challenge = mcpResponse.headers.get("www-authenticate") ?? "";
       if (
@@ -87,6 +101,7 @@ export async function verifyLive({
           health: true,
           security_headers: true,
           oauth_metadata: true,
+          authorization_server_metadata: true,
           oauth_challenge: true,
           origin_allowlist: true,
         },
