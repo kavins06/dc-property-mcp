@@ -3,14 +3,14 @@ import { z } from "zod";
 import { callApi } from "./db";
 import type { Env } from "./types";
 
-export const SERVICE_VERSION = "0.2.0";
+export const SERVICE_VERSION = "0.3.0";
 
 // McpServer output validation requires an object schema. A Zod record is not
 // normalized as an object by the SDK and fails successful tool calls.
 const resultSchema = z.object({}).loose();
 const propertyInput = {
-  ssl: z.string().min(1).max(32).optional(),
-  address: z.string().min(2).max(160).optional(),
+  ssl: z.string().trim().min(1).max(32).optional(),
+  address: z.string().trim().min(2).max(160).optional(),
 };
 
 function toolResult(result: Record<string, unknown>) {
@@ -29,7 +29,8 @@ export function createServer(env: Env): McpServer {
         "Read-only public D.C. property-account facts for commercial-real-estate lending. " +
         "Resolve identity before using facts; preserve fact-level dates, source references, " +
         "null meanings, proposed/current distinctions, and limitations. Never infer title, " +
-        "lien priority, building metrics, NOI, occupancy, zoning compliance, or a lending decision.",
+        "lien priority, building metrics, NOI, occupancy, zoning compliance, or a lending decision. " +
+        "Use resolve_properties_batch only for a caller-supplied list of named assets.",
     },
   );
 
@@ -37,7 +38,7 @@ export function createServer(env: Env): McpServer {
     "resolve_property",
     {
       description:
-        "Use first for an SSL or address. Returns one resolved D.C. property-tax account or ranked ambiguity candidates; never returns collateral facts for an ambiguous match.",
+        "Use first for one SSL or address. Exact matches win; otherwise returns explicitly labeled, scored fuzzy suggestions. Never returns collateral facts for an unresolved identity.",
       inputSchema: {
         ...propertyInput,
         include_deleted: z.boolean().default(false),
@@ -62,11 +63,39 @@ export function createServer(env: Env): McpServer {
       ),
   );
 
+  server.registerTool(
+    "resolve_properties_batch",
+    {
+      description:
+        "Resolve 1–50 caller-supplied named assets for a portfolio tape. Returns one result per client_id in input order; this is bounded lookup, not bulk export.",
+      inputSchema: {
+        items: z.array(
+          z.object({
+            client_id: z.string().trim().min(1).max(100),
+            ssl: z.string().trim().min(1).max(32).optional(),
+            address: z.string().trim().min(2).max(160).optional(),
+          }).refine((item) => Boolean(item.ssl || item.address), {
+            message: "Each named asset requires an SSL or address.",
+          }),
+        ).min(1).max(50),
+      },
+      outputSchema: resultSchema,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ items }) =>
+      toolResult(await callApi(env, "resolve_properties_batch", [items])),
+  );
+
   const propertyTools = [
     {
       name: "get_property_snapshot",
       description:
-        "Use for a lender-oriented collateral quick look: identity, classification, owner of record, assessments, taxes/balances, special assessments, and latest reported transfer.",
+        "Use for a lender-oriented collateral quick look: identity, decoded classification, owner of record, assessments, taxes/balances, special assessments, quality flags, and a slim latest-transfer summary.",
       db: "get_property_snapshot",
     },
     {
@@ -84,13 +113,13 @@ export function createServer(env: Env): McpServer {
     {
       name: "get_ownership_and_sale",
       description:
-        "Use for current owner/mailing data and the latest sale/deed carried by ITSPE. This is not a title report, lien search, or complete transfer history.",
+        "Use for current owner and mailing data with source-preserving quality flags. Sale history is intentionally returned by get_latest_sale_and_deed to avoid duplicate payloads.",
       db: "get_ownership_and_sale",
     },
     {
       name: "get_latest_sale_and_deed",
       description:
-        "Use whenever the user asks about a property's sale, purchase price, transfer, deed, sale type, sale acceptance classification, deed date, or instrument number. Returns the latest assessor-reported sale/deed record; it is not a complete sales history or title report.",
+        "Use for official CAMA sale history plus the latest assessor-reported deed fields. It is not a Recorder chain of title, lien search, or title report.",
       db: "get_latest_sale_and_deed",
     },
   ] as const;
@@ -118,13 +147,26 @@ export function createServer(env: Env): McpServer {
     "search_properties",
     {
       description:
-        "Use for bounded property-account screening with allowlisted filters. No arbitrary SQL, owner-name search, mailing-address output, or bulk export.",
+        "Use for bounded lender screening with allowlisted valuation, classification, sale-date, delinquency, balance, and tax-sale filters plus deterministic sorting. No arbitrary SQL, owner-name search, mailing-address output, or bulk export.",
       inputSchema: {
         ward: z.string().max(8).optional(),
         property_type: z.string().max(80).optional(),
         use_code: z.string().max(16).optional(),
-        min_assessment: z.number().nonnegative().optional(),
-        max_assessment: z.number().nonnegative().optional(),
+        tax_class: z.string().max(8).optional(),
+        min_assessment: z.number().int().nonnegative().optional(),
+        max_assessment: z.number().int().nonnegative().optional(),
+        has_balance: z.boolean().optional(),
+        min_balance_cents: z.number().int().nonnegative().optional(),
+        has_tax_sale_flag: z.boolean().optional(),
+        sale_date_from: z.iso.date().optional(),
+        sale_date_to: z.iso.date().optional(),
+        sort_by: z.enum([
+          "assessment_desc",
+          "balance_desc",
+          "sale_date_desc",
+          "address_asc",
+          "account_id_asc",
+        ]).default("account_id_asc"),
         cursor: z.string().max(128).optional(),
         limit: z.number().int().min(1).max(50).default(20),
       },
@@ -143,9 +185,9 @@ export function createServer(env: Env): McpServer {
     "get_source_evidence",
     {
       description:
-        "Turn fact source references into human-facing D.C. portal links, exact address/SSL/instrument lookup inputs, and short verification steps. Does not return ArcGIS REST, JSON, or session-bound URLs.",
+        "Validate fact source references, then return human-facing D.C. portal links, exact address/SSL/safe instrument lookup inputs, and short verification steps in caller order. Does not return ArcGIS REST, JSON, or session-bound URLs.",
       inputSchema: {
-        source_refs: z.array(z.string().min(1).max(128)).min(1).max(50),
+        source_refs: z.array(z.string().min(1).max(192)).min(1).max(50),
       },
       outputSchema: resultSchema,
       annotations: {
@@ -163,7 +205,7 @@ export function createServer(env: Env): McpServer {
     "describe_data",
     {
       description:
-        "Use when a request is vague or may be unsupported. Deterministically explains terms, coverage, limitations, and the best tool to call; it does not invoke an LLM.",
+        "Ask a data, coverage, code, or filter question. Returns a compact keyword-routed answer, discoverable filter vocabulary, limitations, and the best next tool; it does not invoke an LLM.",
       inputSchema: { question: z.string().max(500).optional() },
       outputSchema: resultSchema,
       annotations: {

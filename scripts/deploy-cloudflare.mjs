@@ -145,21 +145,29 @@ try {
   );
   staged = true;
 
+  // A newly created split deployment can take several seconds to propagate
+  // globally before the version-override header is honored.
+  await new Promise((resolveDelay) => setTimeout(resolveDelay, 5_000));
   await verifyLive({
     baseUrl,
     expectedVersion: packageJson.version,
     versionId: newVersion,
     scriptName,
+    attempts: 20,
   });
 
   promotedDeployment = await createDeployment(
     [{ version_id: newVersion, percentage: 100 }],
     releaseMessage,
   );
+  // The active deployment pointer can take materially longer than an override
+  // to converge across custom-domain edges.
+  await new Promise((resolveDelay) => setTimeout(resolveDelay, 10_000));
   await verifyLive({
     baseUrl,
     expectedVersion: packageJson.version,
     scriptName,
+    attempts: 50,
   });
 } catch (error) {
   if (staged) {

@@ -66,7 +66,9 @@ def main() -> None:
         "| --- | ---: | ---: | --- | --- |",
     ]
     for source in manifest["canonical_sources"]:
-        date_range = f"{source['extract_date_min']} to {source['extract_date_max']}"
+        date_min = source.get("extract_date_min") or source.get("sale_date_min")
+        date_max = source.get("extract_date_max") or source.get("sale_date_max")
+        date_range = f"{date_min} to {date_max}"
         inventory_lines.append(
             f"| `{source['source_id']}` | {source['rows']:,} | "
             f"{source['columns']} | {date_range} | `{source['sha256']}` |"
@@ -106,6 +108,25 @@ def main() -> None:
                         "source_label_only",
                     ]
                 )
+        for field, semantic_key in [
+            ("OBJECTID", "sale.history.source_record_id"),
+            ("SALE_DATE", "sale.history.date"),
+            ("SALE_PRICE", "sale.history.price"),
+            ("QUALIFIED", "sale.history.qualified_code"),
+            ("SALE_CODE", "sale.history.sale_code"),
+            ("SALE_CURR_OWNER", "sale.history.current_owner_flag"),
+        ]:
+            writer.writerow(
+                [
+                    "sale_history",
+                    semantic_key,
+                    "cama_sales_current",
+                    field,
+                    "SALE_DATE",
+                    "human_dc_open_data_portal_with_ssl_and_source_record_id",
+                    "official",
+                ]
+            )
 
     examples: dict[str, dict[str, object]] = {}
     with SOURCE.open("r", encoding="utf-8-sig", errors="replace", newline="") as handle:

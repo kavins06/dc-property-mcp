@@ -32,11 +32,18 @@ def main() -> None:
         steps = example.get("verification_steps", [])
         if not example.get("ssl") or not example.get("address") or len(steps) < 3:
             raise RuntimeError(f"{name}: exact lookup inputs or verification steps are missing")
+        source_record_id = example.get("source_record_id")
+        if source_record_id and not any(
+            str(source_record_id) in step for step in steps
+        ):
+            raise RuntimeError(
+                f"{name}: source record ID is not carried into verification steps"
+            )
 
         if url not in checked_urls:
             request = Request(
                 url,
-                headers={"User-Agent": "dc-property-mcp-evidence-check/0.2"},
+                headers={"User-Agent": "dc-property-mcp-evidence-check/0.3"},
             )
             with urlopen(request, timeout=30) as response:
                 if response.status >= 500:
@@ -49,6 +56,7 @@ def main() -> None:
             "http_status": checked_urls[url],
             "ssl_present": True,
             "address_present": True,
+            "source_record_id_present": source_record_id is not None,
             "verification_steps_present": True,
             "human_portal_url": url,
         }

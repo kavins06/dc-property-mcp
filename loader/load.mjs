@@ -156,6 +156,37 @@ try {
   ]) {
     await applySql(client, migration);
   }
+  await applySql(
+    client,
+    "db/migrations/0013_sale_history_and_semantics.sql",
+  );
+  const existingSaleRows = await tableCount(client, "history.sale_series");
+  if (existingSaleRows === 0) {
+    await copyGzip(
+      client,
+      "history.sale_series",
+      "sale_series.csv.gz",
+    );
+  } else if (existingSaleRows === 215408) {
+    process.stdout.write(
+      `Skipping sale_series.csv.gz (${existingSaleRows} rows already loaded)\n`,
+    );
+  } else {
+    throw new Error(
+      "history.sale_series contains " +
+        `${existingSaleRows} rows; expected 0 or 215408.`,
+    );
+  }
+  for (const migration of [
+    "db/migrations/0014_resolution_and_quality.sql",
+    "db/migrations/0015_lender_api.sql",
+    "db/migrations/0016_evidence_and_dictionary.sql",
+    "db/migrations/0017_free_tier_headroom.sql",
+    "db/migrations/0018_search_runtime_hardening.sql",
+    "db/migrations/0019_screening_indexes.sql",
+  ]) {
+    await applySql(client, migration);
+  }
   await client.query(
     `alter role mcp_runtime login password ${sqlLiteral(runtimePassword)}`,
   );
@@ -165,6 +196,11 @@ try {
       (select count(*)::bigint from core.property_account_current) current_rows,
       (select count(*)::bigint from history.assessment_snapshot_record) assessment_rows,
       (select count(*)::bigint from history.tax_series) tax_rows,
+      (select count(*)::bigint from history.sale_series) sale_account_rows,
+      (
+        select coalesce(sum(cardinality(source_objectids)), 0)::bigint
+        from history.sale_series
+      ) sale_source_rows,
       pg_database_size(current_database())::bigint database_size_bytes
   `);
   const summary = counts.rows[0];
@@ -172,15 +208,18 @@ try {
   if (
     Number(summary.current_rows) !== 221263 ||
     Number(summary.assessment_rows) !== 652131 ||
-    Number(summary.tax_rows) !== 221263
+    Number(summary.tax_rows) !== 221263 ||
+    Number(summary.sale_account_rows) !== 215408 ||
+    Number(summary.sale_source_rows) !== 421436
   ) {
     throw new Error("Post-load row-count gate failed.");
   }
-  if (Number(summary.database_size_bytes) > 450_000_000) {
-    throw new Error("PostgreSQL 450 MB no-go size gate failed.");
+  if (Number(summary.database_size_bytes) > 480_000_000) {
+    throw new Error("PostgreSQL 480 MB free-tier safety gate failed.");
   }
 
   await applySql(client, "db/tests/postload_checks.sql");
+  await applySql(client, "db/tests/reviewer_regressions.sql");
   process.stdout.write("All post-load database gates passed.\n");
 } finally {
   await client.end().catch(() => {});

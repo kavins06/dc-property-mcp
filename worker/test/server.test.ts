@@ -24,13 +24,22 @@ describe("MCP tool catalog", () => {
         "get_property_snapshot",
         "get_source_evidence",
         "get_tax_and_balance_history",
+        "resolve_properties_batch",
         "resolve_property",
         "search_properties",
       ]);
       expect(
         response.tools.find((tool) => tool.name === "get_latest_sale_and_deed")
           ?.description,
-      ).toContain("sale");
+      ).toContain("history");
+      expect(
+        response.tools.find((tool) => tool.name === "resolve_properties_batch")
+          ?.description,
+      ).toContain("named");
+      expect(
+        response.tools.find((tool) => tool.name === "search_properties")
+          ?.description,
+      ).toContain("delinquency");
       expect(response.tools.every((tool) => tool.annotations?.readOnlyHint)).toBe(
         true,
       );

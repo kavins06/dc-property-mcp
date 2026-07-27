@@ -3,6 +3,7 @@ import type { Env } from "./types";
 
 const ALLOWED_FUNCTIONS = new Set([
   "resolve_property",
+  "resolve_properties_batch",
   "get_property_snapshot",
   "get_assessment_history",
   "get_tax_and_balance_history",
@@ -13,13 +14,64 @@ const ALLOWED_FUNCTIONS = new Set([
   "describe_data",
 ]);
 
+export type SafeDatabaseError = {
+  status: "error";
+  error: {
+    code: "query_timeout" | "database_unavailable" | "invalid_request";
+    hint: string;
+    retryable: boolean;
+  };
+};
+
+export function sanitizeDatabaseError(error: unknown): SafeDatabaseError {
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? String(error.code)
+      : "";
+  if (code === "57014") {
+    return {
+      status: "error",
+      error: {
+        code: "query_timeout",
+        hint: "Try the SSL, or shorten the address to street number, street name, and quadrant.",
+        retryable: true,
+      },
+    };
+  }
+  if (code.startsWith("22")) {
+    return {
+      status: "error",
+      error: {
+        code: "invalid_request",
+        hint: "Check the supplied values against describe_data, then retry.",
+        retryable: false,
+      },
+    };
+  }
+  return {
+    status: "error",
+    error: {
+      code: "database_unavailable",
+      hint: "The property service is temporarily unavailable. Retry shortly.",
+      retryable: true,
+    },
+  };
+}
+
 export async function callApi(
   env: Env,
   functionName: string,
   args: unknown[],
 ): Promise<Record<string, unknown>> {
   if (!ALLOWED_FUNCTIONS.has(functionName)) {
-    throw new Error("Unapproved database function");
+    return {
+      status: "error",
+      error: {
+        code: "invalid_request",
+        hint: "The requested operation is not available.",
+        retryable: false,
+      },
+    };
   }
   const placeholders = args.map((_, index) => `$${index + 1}`).join(", ");
   const sql = `select api_v1.${functionName}(${placeholders}) as result`;
@@ -31,14 +83,18 @@ export async function callApi(
     statement_timeout: 8000,
     query_timeout: 9500,
   });
-  await client.connect();
+  let connected = false;
   try {
+    await client.connect();
+    connected = true;
     // Hyperdrive can reuse an existing PostgreSQL session whose role default
     // predates a timeout change, so set the ceiling explicitly per checkout.
     await client.query("set statement_timeout = '8s'");
     const result = await client.query<{ result: Record<string, unknown> }>(sql, args);
     return result.rows[0]?.result ?? { status: "service_unavailable" };
+  } catch (error) {
+    return sanitizeDatabaseError(error);
   } finally {
-    await client.end();
+    if (connected) await client.end().catch(() => undefined);
   }
 }

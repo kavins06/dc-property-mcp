@@ -5,7 +5,7 @@ import csv
 import gzip
 import hashlib
 import json
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -61,6 +61,20 @@ SOURCES = [
         "years": {"prior": 2025, "current": 2026, "proposed": 2027},
     },
 ]
+
+CAMA_SOURCE = {
+    "source_id": "cama_sales_current",
+    "path": WORKSPACE / "sales_history_raw" / "Tax_System_Property_Sales_CAMA.csv",
+    "retrieved_at": "2026-07-27T17:27:25-04:00",
+    "source_url": (
+        "https://opendata.dc.gov/api/download/v1/items/"
+        "ee35b5aa5ca643679fb37c141c532a92/csv?layers=57"
+    ),
+    "landing_url": (
+        "https://opendata.dc.gov/datasets/DCGIS::"
+        "tax-system-property-sales-cama"
+    ),
+}
 
 CURRENT_FIELDS = [
     "INTERNALID", "OBJECTID", "SSL", "SQUARE", "SUFFIX", "LOT", "PRESSL",
@@ -148,6 +162,48 @@ def source_profile(source: dict[str, object]) -> dict[str, object]:
         "archive_capture_at": source["archive_capture_at"],
         "retrieved_at": source["retrieved_at"],
         "source_url": source["source_url"],
+    }
+
+
+def cama_source_profile() -> dict[str, object]:
+    path = Path(CAMA_SOURCE["path"])
+    rows = 0
+    blank_ssl = 0
+    sale_dates: list[str] = []
+    object_ids: set[str] = set()
+    with path.open("r", encoding="utf-8-sig", errors="replace", newline="") as handle:
+        reader = csv.DictReader(handle)
+        required = {
+            "OBJECTID", "ROW_NUMBER", "SSL", "SALE_DATE", "SALE_PRICE",
+            "QUALIFIED", "SALE_CODE", "SALE_CURR_OWNER", "GIS_LAST_MOD_DTTM",
+        }
+        missing = sorted(required.difference(reader.fieldnames or []))
+        if missing:
+            raise RuntimeError(f"CAMA sale source is missing fields: {missing}")
+        for row in reader:
+            rows += 1
+            if not normalize_ssl(row.get("SSL")):
+                blank_ssl += 1
+            object_id = (row.get("OBJECTID") or "").strip()
+            if object_id:
+                object_ids.add(object_id)
+            sale_date = iso_date(row.get("SALE_DATE"))
+            if sale_date:
+                sale_dates.append(sale_date)
+    return {
+        "source_id": CAMA_SOURCE["source_id"],
+        "file": str(path),
+        "bytes": path.stat().st_size,
+        "sha256": sha256(path),
+        "rows": rows,
+        "columns": len(required),
+        "blank_ssl_rows": blank_ssl,
+        "duplicate_object_ids": rows - len(object_ids),
+        "sale_date_min": min(sale_dates) if sale_dates else None,
+        "sale_date_max": max(sale_dates) if sale_dates else None,
+        "retrieved_at": CAMA_SOURCE["retrieved_at"],
+        "source_url": CAMA_SOURCE["source_url"],
+        "landing_url": CAMA_SOURCE["landing_url"],
     }
 
 
@@ -397,6 +453,78 @@ def build_tax_arrays() -> dict[str, object]:
     return artifact(output, rows)
 
 
+def build_sale_series() -> dict[str, object]:
+    current_account_by_ssl: dict[str, int] = {}
+    with Path(SOURCES[-1]["path"]).open(
+        "r", encoding="utf-8-sig", errors="replace", newline=""
+    ) as current_handle:
+        for source_row, row in enumerate(csv.DictReader(current_handle), start=2):
+            ssl = normalize_ssl(row.get("SSL"))
+            if ssl:
+                current_account_by_ssl[ssl] = source_row - 1
+
+    grouped: dict[int, list[dict[str, str]]] = defaultdict(list)
+    unlinked_rows = 0
+    with Path(CAMA_SOURCE["path"]).open(
+        "r", encoding="utf-8-sig", errors="replace", newline=""
+    ) as in_handle:
+        for row in csv.DictReader(in_handle):
+            account_id = current_account_by_ssl.get(normalize_ssl(row.get("SSL")))
+            if account_id is None:
+                unlinked_rows += 1
+                continue
+            grouped[account_id].append(row)
+
+    output = GENERATED / "sale_series.csv.gz"
+    fields = [
+        "account_id", "source_objectids", "sale_dates", "sale_prices",
+        "qualified_codes", "sale_codes", "current_owner_flags",
+    ]
+    source_rows = 0
+    with gzip.open(
+        output, "wt", encoding="utf-8", newline="", compresslevel=6
+    ) as out_handle:
+        writer = csv.DictWriter(out_handle, fieldnames=fields)
+        writer.writeheader()
+        for account_id in sorted(grouped):
+            records = sorted(
+                grouped[account_id],
+                key=lambda row: (
+                    iso_date(row.get("SALE_DATE")),
+                    int((row.get("OBJECTID") or "0").strip() or 0),
+                ),
+                reverse=True,
+            )
+            writer.writerow(
+                {
+                    "account_id": account_id,
+                    "source_objectids": pg_array([
+                        (row.get("OBJECTID") or "").strip() for row in records
+                    ]),
+                    "sale_dates": pg_array([
+                        iso_date(row.get("SALE_DATE")) for row in records
+                    ], quote=True),
+                    "sale_prices": pg_array([
+                        whole_dollars(row.get("SALE_PRICE")) for row in records
+                    ]),
+                    "qualified_codes": pg_array([
+                        (row.get("QUALIFIED") or "").strip() for row in records
+                    ], quote=True),
+                    "sale_codes": pg_array([
+                        (row.get("SALE_CODE") or "").strip() for row in records
+                    ], quote=True),
+                    "current_owner_flags": pg_array([
+                        (row.get("SALE_CURR_OWNER") or "").strip() for row in records
+                    ]),
+                }
+            )
+            source_rows += len(records)
+    result = artifact(output, len(grouped))
+    result["source_rows"] = source_rows
+    result["unlinked_source_rows"] = unlinked_rows
+    return result
+
+
 def artifact(path: Path, rows: int) -> dict[str, object]:
     return {
         "file": str(path),
@@ -410,10 +538,12 @@ def main() -> None:
     for directory in (GENERATED, MANIFEST_DIR, REPORT_DIR):
         directory.mkdir(parents=True, exist_ok=True)
     profiles = [source_profile(source) for source in SOURCES]
+    profiles.append(cama_source_profile())
     artifacts = {
         "property_account_current": build_current(),
         "assessment_snapshot_record": build_assessments(),
         "tax_series": build_tax_arrays(),
+        "sale_series": build_sale_series(),
     }
     manifest = {
         "created_at": datetime.now(timezone.utc).isoformat(),

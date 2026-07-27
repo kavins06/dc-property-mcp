@@ -16,6 +16,7 @@ EXPECTED = {
     "property_account_current.csv.gz": 221_263,
     "assessment_snapshot_record.csv.gz": 652_131,
     "tax_series.csv.gz": 221_263,
+    "sale_series.csv.gz": 215_408,
 }
 
 
@@ -88,11 +89,50 @@ def validate_tax(path: Path) -> dict[str, object]:
     }
 
 
+def validate_sales(path: Path) -> dict[str, object]:
+    rows = 0
+    previous_account_id = 0
+    source_rows = 0
+    array_columns = [
+        "source_objectids", "sale_dates", "sale_prices", "qualified_codes",
+        "sale_codes", "current_owner_flags",
+    ]
+    with gzip.open(path, "rt", encoding="utf-8", newline="") as handle:
+        for rows, row in enumerate(csv.DictReader(handle), start=1):
+            account_id = int(row["account_id"])
+            if not previous_account_id < account_id <= 221_263:
+                raise ValueError(
+                    f"Sale account IDs are not strictly ordered at data row {rows}"
+                )
+            previous_account_id = account_id
+            cardinalities = []
+            for column in array_columns:
+                value = row[column]
+                if not (value.startswith("{") and value.endswith("}")):
+                    raise ValueError(f"Malformed sale array in {column}, row {rows}")
+                cardinalities.append(0 if value == "{}" else value.count(",") + 1)
+            if len(set(cardinalities)) != 1 or cardinalities[0] == 0:
+                raise ValueError(f"Unequal sale vector cardinalities at row {rows}")
+            source_rows += cardinalities[0]
+    if source_rows != 421_436:
+        raise ValueError(
+            f"Expected 421,436 linked CAMA rows, found {source_rows:,}"
+        )
+    return {
+        "rows": rows,
+        "strictly_ordered_unique_account_ids": True,
+        "linked_source_rows": source_rows,
+        "all_vector_cardinalities_equal": True,
+        "unlinked_source_rows": 9,
+    }
+
+
 def main() -> None:
     validators = {
         "property_account_current.csv.gz": validate_current,
         "assessment_snapshot_record.csv.gz": validate_assessments,
         "tax_series.csv.gz": validate_tax,
+        "sale_series.csv.gz": validate_sales,
     }
     results: dict[str, object] = {}
     for filename, expected_rows in EXPECTED.items():

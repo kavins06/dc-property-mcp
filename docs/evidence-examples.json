@@ -6,7 +6,7 @@
     "record_extract_at": "2026-04-06",
     "human_portal_url": "https://mytax.dc.gov/?Link=PropertySearch&Check=1",
     "verification_steps": [
-      "Enter address 2220 Q ST SE or SSL 5576    0001",
+      "Enter address 2220 Q ST SE WASHINGTON DC 20020 or SSL 5576    0001",
       "Select Search",
       "Open the matching account and select the relevant tab"
     ]
@@ -18,7 +18,7 @@
     "record_extract_at": "2026-04-06",
     "human_portal_url": "https://mytax.dc.gov/?Link=PropertySearch&Check=1",
     "verification_steps": [
-      "Enter address 549 BRUMMEL CT NW # 549 or SSL 3180    2008",
+      "Enter address 549 BRUMMEL CT NW # 549 WASHINGTON DC 20012-1854 or SSL 3180    2008",
       "Select Search",
       "Open the matching account and select the relevant tab"
     ]
@@ -30,7 +30,7 @@
     "record_extract_at": "2026-04-21",
     "human_portal_url": "https://mytax.dc.gov/?Link=PropertySearch&Check=1",
     "verification_steps": [
-      "Enter address 801 NEW JERSEY AVE NW or SSL PI0006230380",
+      "Enter address 801 NEW JERSEY AVE NW WASHINGTON DC 20001-2318 or SSL PI0006230380",
       "Select Search",
       "Open the matching account and select the relevant tab"
     ]
@@ -42,7 +42,7 @@
     "record_extract_at": "2026-06-12",
     "human_portal_url": "https://mytax.dc.gov/?Link=PropertySearch&Check=1",
     "verification_steps": [
-      "Enter address 1647 20TH ST NW or SSL 0111    0020",
+      "Enter address 1647 20TH ST NW WASHINGTON DC 20009 or SSL 0111    0020",
       "Select Search",
       "Open the matching account and select the relevant tab"
     ]
@@ -54,9 +54,22 @@
     "record_extract_at": "2026-03-02",
     "human_portal_url": "https://mytax.dc.gov/?Link=PropertySearch&Check=1",
     "verification_steps": [
-      "Enter address 1321 ALABAMA AVE SE or SSL PAR 02290151",
+      "Enter address 1321 ALABAMA AVE SE WASHINGTON DC 20032 or SSL PAR 02290151",
       "Select Search",
       "Open the matching account and select the relevant tab"
+    ]
+  },
+  "cama_sale_history": {
+    "ssl": "0107--0075",
+    "address": "1801 K ST NW WASHINGTON DC 20006",
+    "property_type": "Commercial-Office (Large)",
+    "record_extract_at": "2026-07-27",
+    "source_record_id": "473583123",
+    "human_portal_url": "https://opendata.dc.gov/datasets/DCGIS::tax-system-property-sales-cama",
+    "verification_steps": [
+      "Open the official Tax System Property Sales (CAMA) dataset page",
+      "Use SSL 0107--0075 or address 1801 K ST NW WASHINGTON DC 20006 to identify the property",
+      "Match source record ID 473583123 and the 2015-01-14 sale for $445,000,000"
     ]
   }
 }

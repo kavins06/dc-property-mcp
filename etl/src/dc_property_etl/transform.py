@@ -6,6 +6,12 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 _SPACE_RE = re.compile(r"\s+")
 _ADDRESS_PUNCT_RE = re.compile(r"[^A-Z0-9 ]+")
+_PROPERTY_TYPE_REPAIRS = {
+    "Residential-Condominium (Garag": "Residential-Condominium (Garage)",
+    "Commercial-Office (Condominium": "Commercial-Office (Condominium)",
+    "Commercial-Office (Miscellaneo": "Commercial-Office (Miscellaneous)",
+    "Office-Condominium (Horizontal": "Office-Condominium (Horizontal)",
+}
 
 
 def normalize_ssl(value: str | None) -> str:
@@ -28,6 +34,49 @@ def normalize_address(value: str | None) -> str:
     raw = (value or "").upper().strip()
     raw = _ADDRESS_PUNCT_RE.sub(" ", raw)
     return _SPACE_RE.sub(" ", raw).strip()
+
+
+def canonical_property_type(value: str | None) -> str:
+    """Return a stable display label while preserving the source label separately."""
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    repaired = _PROPERTY_TYPE_REPAIRS.get(raw, raw)
+    if repaired == "Vacant-True":
+        return "Vacant"
+    match = re.fullmatch(r"(.+?) \((.+)\)", repaired)
+    if match:
+        base = match.group(1).replace("-", " ")
+        detail = match.group(2).replace("-", " ")
+        return f"{base} — {detail}"
+    return repaired.replace("-", " ")
+
+
+def property_quality_flags(record: dict[str, str]) -> list[str]:
+    """Flag source anomalies without changing the reported public-record values."""
+    flags: list[str] = []
+    mailing = (record.get("mailing_city_state_zip") or "").upper()
+    if "SEOUL" in mailing and "NORTH KOREA" in mailing:
+        flags.append("mailing_jurisdiction_conflict")
+
+    assessment_raw = (record.get("current_total_value") or "").strip()
+    sale_raw = (record.get("latest_sale_price_dollars") or "").strip()
+    try:
+        assessment = Decimal(assessment_raw)
+        sale = Decimal(sale_raw)
+    except InvalidOperation:
+        assessment = Decimal(0)
+        sale = Decimal(0)
+    if assessment > 0 and sale > 0:
+        ratio = sale / assessment
+        if ratio < Decimal("0.05") or ratio > Decimal("20"):
+            flags.append("sale_price_assessment_outlier")
+
+    if len(record.get("property_type") or "") >= 30:
+        flags.append("property_type_source_length_limit")
+    if len(record.get("premise_address") or "") >= 50:
+        flags.append("premise_address_source_length_limit")
+    return flags
 
 
 def money_to_cents(value: str | None) -> str:

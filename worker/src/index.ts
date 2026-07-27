@@ -108,7 +108,7 @@ export async function boundedMcpRequest(
   return new Request(request, { body });
 }
 
-async function isSearchRequest(request: Request): Promise<boolean> {
+async function isHighCostRequest(request: Request): Promise<boolean> {
   if (request.method !== "POST") return false;
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return false;
@@ -117,7 +117,12 @@ async function isSearchRequest(request: Request): Promise<boolean> {
       method?: string;
       params?: { name?: string };
     }>();
-    return body.method === "tools/call" && body.params?.name === "search_properties";
+    return (
+      body.method === "tools/call" &&
+      ["search_properties", "resolve_properties_batch"].includes(
+        body.params?.name ?? "",
+      )
+    );
   } catch {
     return false;
   }
@@ -233,7 +238,7 @@ async function handleRequest(
     throw error;
   }
 
-  if (env.SEARCH_RATE_LIMITER && await isSearchRequest(boundedRequest)) {
+  if (env.SEARCH_RATE_LIMITER && await isHighCostRequest(boundedRequest)) {
     const { success } = await env.SEARCH_RATE_LIMITER.limit({ key });
     if (!success) {
       return jsonError("search_rate_limit_exceeded", 429, { "Retry-After": "60" });

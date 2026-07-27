@@ -16,7 +16,7 @@ export async function verifyLive({
   expectedVersion = packageJson.version,
   versionId,
   scriptName = "dc-property-mcp",
-  attempts = 8,
+  attempts = 15,
 } = {}) {
   const headers = { "Cache-Control": "no-cache" };
   if (versionId) {
@@ -27,7 +27,10 @@ export async function verifyLive({
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      const healthResponse = await fetch(`${baseUrl}/healthz`, { headers });
+      const healthResponse = await fetch(
+        `${baseUrl}/healthz?verification=${crypto.randomUUID()}`,
+        { headers },
+      );
       const health = await healthResponse.json();
       if (
         healthResponse.status !== 200 ||

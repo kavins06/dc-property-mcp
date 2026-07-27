@@ -14,10 +14,16 @@ Required from the project owner:
 - A newly generated password for the `mcp_runtime` role. This is distinct from
   the administrative password and is used only by Cloudflare Hyperdrive.
 
-Run the ETL loader, record `pg_database_size`, and stop if it exceeds 450 MB.
-The preferred operating target is 400 MB or less. Verify that `mcp_runtime`
+Run the ETL loader, record `pg_database_size`, warn at 470 MB, and stop if it
+exceeds 480 MB. Verify that `mcp_runtime`
 cannot select from `core`, `history`, `meta`, or `semantic`, and can execute
-only the nine public `api_v1` functions.
+only the ten public `api_v1` functions.
+
+The immutable assessment history deliberately uses an account lookup index and
+a partial diagnostic unique index instead of a full-table primary-key index.
+The resulting no-primary-key and static-foreign-key performance notices are
+documented storage waivers, not security waivers. The security advisor must
+still be completely clear.
 
 ## Cloudflare
 
@@ -31,7 +37,7 @@ Required from the project owner:
 The deployed Worker uses Hyperdrive with the **Supabase direct** connection string for
 `mcp_runtime`; do not point Hyperdrive at Supavisor. Put the returned
 configuration ID in `wrangler.jsonc`. Configure general and tighter
-`search_properties` rate limiters.
+`search_properties` and `resolve_properties_batch` rate limiters.
 
 ## WorkOS
 
@@ -48,14 +54,24 @@ and exact resource audience; it never accepts an unverified token.
 
 ## Release gates
 
-- Migrations apply and all three exact row-count gates pass.
+- Migrations apply and all five exact row-count gates pass.
 - PostgreSQL total size is within the storage gate.
 - Runtime table reads fail; allowlisted function calls succeed.
-- Five evidence examples open a human-verifiable official result.
+- MyTax, CAMA, and Recorder evidence examples open durable human-facing
+  official portals with exact lookup inputs and no machine/session URLs.
 - WorkOS sign-up, email verification, consent, token refresh, and logout pass.
-- ChatGPT and Claude can discover OAuth metadata and call all nine tools.
+- ChatGPT and Claude can discover OAuth metadata and call all ten tools.
 - Ambiguous address requests return candidates without collateral facts.
+- Exact addresses resolve before fuzzy search; fuzzy-only responses are scored
+  and labeled `no_exact_match`.
+- Batch resolution preserves input order for 1–50 caller-named assets.
 - Malformed filters cannot create arbitrary SQL or unbounded exports.
+- Invalid wards, unknown filter values, and inverted ranges return
+  `invalid_input`, not a false zero-match answer.
+- The 1801 K Street mailing-jurisdiction conflict remains visible and carries a
+  quality flag.
+- Tax history uses `total_liabilities_reported_cents`, compact shared
+  provenance, and slot-qualified refs.
 - Logs contain no access tokens, database URLs, owner/mailing payloads, or
   source-session URLs.
 - Worker type-checks and all unit tests pass; both npm trees have zero known
