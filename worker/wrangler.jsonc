@@ -1,0 +1,41 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dc-property-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "WORKOS_AUTHKIT_DOMAIN": "ripe-theater-06.authkit.app",
+    "WORKOS_RESOURCE_URI": "https://dc-property-mcp.quoindata.com/mcp",
+    "ALLOWED_ORIGINS": ""
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "a9ec4dc6114e4057a11bea66b8fe50b3",
+      "localConnectionString": "postgresql://mcp_runtime:local@127.0.0.1:5432/dc_property"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "GENERAL_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
+      "name": "SEARCH_RATE_LIMITER",
+      "namespace_id": "1002",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
+    }
+  ]
+}

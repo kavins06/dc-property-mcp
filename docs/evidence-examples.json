@@ -1,0 +1,62 @@
+{
+  "multifamily": {
+    "ssl": "5576    0001",
+    "address": "2220 Q ST SE WASHINGTON DC 20020",
+    "property_type": "Residential-Multi-Family (3 to",
+    "record_extract_at": "2026-04-06",
+    "human_portal_url": "https://mytax.dc.gov/?Link=PropertySearch&Check=1",
+    "verification_steps": [
+      "Enter address 2220 Q ST SE or SSL 5576    0001",
+      "Select Search",
+      "Open the matching account and select the relevant tab"
+    ]
+  },
+  "condominium": {
+    "ssl": "3180    2008",
+    "address": "549 BRUMMEL CT NW # 549 WASHINGTON DC 20012-1854",
+    "property_type": "Residential-Condominium (Horiz",
+    "record_extract_at": "2026-04-06",
+    "human_portal_url": "https://mytax.dc.gov/?Link=PropertySearch&Check=1",
+    "verification_steps": [
+      "Enter address 549 BRUMMEL CT NW # 549 or SSL 3180    2008",
+      "Select Search",
+      "Open the matching account and select the relevant tab"
+    ]
+  },
+  "commercial_office": {
+    "ssl": "PI0006230380",
+    "address": "801 NEW JERSEY AVE NW WASHINGTON DC 20001-2318",
+    "property_type": "Commercial-Office (Small)",
+    "record_extract_at": "2026-04-21",
+    "human_portal_url": "https://mytax.dc.gov/?Link=PropertySearch&Check=1",
+    "verification_steps": [
+      "Enter address 801 NEW JERSEY AVE NW or SSL PI0006230380",
+      "Select Search",
+      "Open the matching account and select the relevant tab"
+    ]
+  },
+  "retail": {
+    "ssl": "0111    0020",
+    "address": "1647 20TH ST NW WASHINGTON DC 20009",
+    "property_type": "Store-Restaurant",
+    "record_extract_at": "2026-06-12",
+    "human_portal_url": "https://mytax.dc.gov/?Link=PropertySearch&Check=1",
+    "verification_steps": [
+      "Enter address 1647 20TH ST NW or SSL 0111    0020",
+      "Select Search",
+      "Open the matching account and select the relevant tab"
+    ]
+  },
+  "deleted_account": {
+    "ssl": "PAR 02290151",
+    "address": "1321 ALABAMA AVE SE WASHINGTON DC 20032",
+    "property_type": "",
+    "record_extract_at": "2026-03-02",
+    "human_portal_url": "https://mytax.dc.gov/?Link=PropertySearch&Check=1",
+    "verification_steps": [
+      "Enter address 1321 ALABAMA AVE SE or SSL PAR 02290151",
+      "Select Search",
+      "Open the matching account and select the relevant tab"
+    ]
+  }
+}

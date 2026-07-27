@@ -1,0 +1,14 @@
+data/generated/
+db/reports/generated/
+*.csv
+!docs/source-field-matrix.csv
+*.csv.gz
+*.dump
+*.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+node_modules/
+.wrangler/
+worker/dist/

@@ -1,0 +1,78 @@
+{
+  "created_at": "2026-07-27T03:10:35.193276+00:00",
+  "canonical_sources": [
+    {
+      "source_id": "itspe_2017_archive",
+      "file": "C:\\_Organized_Drive\\DC Data\\assessment_history_raw\\ITSPE_snapshot_2017-02-16.csv",
+      "bytes": 225281177,
+      "sha256": "ee9915a77d8bab591b8bb12c99bf148142a1c19a7e74eb21df02aeec8a4bb845",
+      "rows": 218027,
+      "columns": 208,
+      "blank_ssl_rows": 0,
+      "duplicate_ssl_keys": 0,
+      "extract_date_min": "2017-02-04",
+      "extract_date_max": "2017-02-04",
+      "distinct_extract_dates": 1,
+      "archive_capture_at": "2017-02-16T21:19:48Z",
+      "retrieved_at": null,
+      "source_url": "https://web.archive.org/web/20170216211948id_/http://opendata.dc.gov/datasets/496533836db640bcade61dd9078b0d63_53.csv"
+    },
+    {
+      "source_id": "itspe_2021_archive",
+      "file": "C:\\_Organized_Drive\\DC Data\\assessment_history_raw\\ITSPE_snapshot_2021-11-26.csv",
+      "bytes": 195185233,
+      "sha256": "244868a74ca3f82ba8abcca24c987d8e0c5c4635b94d3c4a171a4f920355d1f6",
+      "rows": 212841,
+      "columns": 218,
+      "blank_ssl_rows": 15,
+      "duplicate_ssl_keys": 1,
+      "extract_date_min": "2021-10-08",
+      "extract_date_max": "2021-11-23",
+      "distinct_extract_dates": 31,
+      "archive_capture_at": "2021-11-26T11:42:11Z",
+      "retrieved_at": null,
+      "source_url": "https://web.archive.org/web/20211126114211id_/https://opendata.dc.gov/datasets/496533836db640bcade61dd9078b0d63_53.csv"
+    },
+    {
+      "source_id": "itspe_current",
+      "file": "C:\\_Organized_Drive\\DC Data\\ITSPE.csv",
+      "bytes": 215078178,
+      "sha256": "7c9c083bdabf28b2b1c161c1b80d02841f7862f1ff0b90b28d8576b663351719",
+      "rows": 221263,
+      "columns": 218,
+      "blank_ssl_rows": 0,
+      "duplicate_ssl_keys": 0,
+      "extract_date_min": "2024-03-01",
+      "extract_date_max": "2026-06-22",
+      "distinct_extract_dates": 79,
+      "archive_capture_at": null,
+      "retrieved_at": "2026-07-26T17:50:23-04:00",
+      "source_url": "https://opendata.dc.gov/api/download/v1/items/1476813cbc2d458394ce586ce06d3edd/csv?layers=53"
+    }
+  ],
+  "generated_artifacts": {
+    "property_account_current": {
+      "file": "C:\\_Organized_Drive\\DC Data\\dc-property-mcp\\data\\generated\\property_account_current.csv.gz",
+      "rows": 221263,
+      "bytes": 33208643,
+      "sha256": "1c50f33f35f75a253a80649553f99b8a373427d3048e48ca505ed915a79abdbd"
+    },
+    "assessment_snapshot_record": {
+      "file": "C:\\_Organized_Drive\\DC Data\\dc-property-mcp\\data\\generated\\assessment_snapshot_record.csv.gz",
+      "rows": 652131,
+      "bytes": 31691585,
+      "sha256": "4a8e8b0596ab004673cc1747aa850f5b9d55488105e13d122b25a9672606b4e5"
+    },
+    "tax_series": {
+      "file": "C:\\_Organized_Drive\\DC Data\\dc-property-mcp\\data\\generated\\tax_series.csv.gz",
+      "rows": 221263,
+      "bytes": 14983855,
+      "sha256": "2cae8cb6b3d79ba7304a0c229d7588c9369c2ddf1d3bb4c9d755dd71b0f81b12"
+    }
+  },
+  "temporal_contract": {
+    "record_extract_at": "Per-row EXTRACTDAT from the source",
+    "dataset_retrieved_at": "Local download time; not a fact effective date",
+    "archive_capture_at": "Archive capture time; not a fact effective date"
+  }
+}
