@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.2 — 2026-07-28
 
 - Simplified internal loader and deployment tooling by removing obsolete
   release-probe paths and consolidating environment and Cloudflare helpers.

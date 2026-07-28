@@ -125,7 +125,7 @@ const provider = new InMemoryOAuthClientProvider(
   },
 );
 const client = new Client(
-  { name: "quoin-release-verifier", version: "0.4.1" },
+  { name: "quoin-release-verifier", version: "0.4.2" },
   { capabilities: {} },
 );
 
@@ -243,7 +243,7 @@ let authClient;
 try {
   if (authServerUrl.origin !== serverUrl.origin) {
     authClient = new Client(
-      { name: "quoin-release-auth-bootstrap", version: "0.4.1" },
+      { name: "quoin-release-auth-bootstrap", version: "0.4.2" },
       { capabilities: {} },
     );
     authTransport = await connect(authServerUrl, authClient, true);
@@ -328,7 +328,7 @@ try {
 
   const verification = {
     passed: true,
-    service_version: "0.4.1",
+    service_version: "0.4.2",
     endpoint: serverUrl.toString(),
     authorization_resource: authServerUrl.toString(),
     tool_count: toolNames.length,
@@ -343,7 +343,7 @@ try {
   writeFileSync(
     resolve(
       reportDirectory,
-      `authenticated-mcp-${isCandidate ? "candidate" : "production"}-0.4.1.json`,
+      `authenticated-mcp-${isCandidate ? "candidate" : "production"}-0.4.2.json`,
     ),
     `${JSON.stringify(verification, null, 2)}\n`,
   );

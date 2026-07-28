@@ -6,7 +6,7 @@
 - Health: `https://dc-property-mcp.quoindata.com/healthz`
 - Authentication: WorkOS AuthKit
 - Database: PostgreSQL 18 on Hetzner through Hyperdrive and Workers VPC
-- Contract: v0.4.1, 15 read-only MCP tools
+- Contract: v0.4.2, 15 read-only MCP tools
 
 A healthy unauthenticated MCP request returns `401` with a
 `WWW-Authenticate` link to protected-resource metadata.
@@ -157,7 +157,7 @@ $env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
 node scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node scripts\promote-cloudflare.mjs
-node scripts\verify-live.mjs 0.4.1
+node scripts\verify-live.mjs 0.4.2
 node scripts\verify-authenticated-mcp.mjs
 ```
 

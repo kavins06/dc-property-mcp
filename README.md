@@ -118,7 +118,7 @@ $env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
 node ..\scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node --env-file=..\.env.hosted ..\scripts\promote-cloudflare.mjs
-node ..\scripts\verify-live.mjs 0.4.1
+node ..\scripts\verify-live.mjs 0.4.2
 node ..\scripts\verify-authenticated-mcp.mjs
 ```
 
