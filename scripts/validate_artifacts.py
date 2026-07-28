@@ -4,7 +4,6 @@ from __future__ import annotations
 import csv
 import gzip
 import json
-from collections import Counter
 from pathlib import Path
 
 
@@ -14,10 +13,21 @@ REPORT = PROJECT / "db" / "reports" / "generated" / "artifact_validation.json"
 
 EXPECTED = {
     "property_account_current.csv.gz": 221_263,
-    "assessment_snapshot_record.csv.gz": 652_131,
     "tax_series.csv.gz": 221_263,
     "sale_series.csv.gz": 215_408,
 }
+EXPECTED_LINKED_SALE_ROWS = 421_436
+EXPECTED_UNLINKED_SALE_ROWS = 9
+ACTIVE_ASSESSMENT_YEARS = {
+    "prior": 2025,
+    "current": 2026,
+    "proposed": 2027,
+}
+CURRENT_ASSESSMENT_COLUMNS = [
+    f"{stage}_{value_part}_value"
+    for stage in ACTIVE_ASSESSMENT_YEARS
+    for value_part in ("land", "improvement", "total")
+]
 
 
 def validate_current(path: Path) -> dict[str, object]:
@@ -25,44 +35,46 @@ def validate_current(path: Path) -> dict[str, object]:
     blank_ssl = 0
     duplicate_ssl = 0
     seen: set[str] = set()
+    incomplete_assessment_rows = 0
     with gzip.open(path, "rt", encoding="utf-8", newline="") as handle:
-        for rows, row in enumerate(csv.DictReader(handle), start=1):
+        reader = csv.DictReader(handle)
+        required = {
+            "account_id",
+            "source_id",
+            "ssl_normalized",
+            *CURRENT_ASSESSMENT_COLUMNS,
+        }
+        missing = sorted(required.difference(reader.fieldnames or []))
+        if missing:
+            raise ValueError(f"Current artifact is missing columns: {missing}")
+        for rows, row in enumerate(reader, start=1):
             if int(row["account_id"]) != rows:
                 raise ValueError(f"Non-sequential current account_id at data row {rows}")
+            if row["source_id"] != "itspe_current":
+                raise ValueError(
+                    f"Unexpected current source_id at data row {rows}: "
+                    f"{row['source_id']!r}"
+                )
             ssl = row["ssl_normalized"]
             blank_ssl += not bool(ssl)
             if ssl in seen:
                 duplicate_ssl += 1
             seen.add(ssl)
+            incomplete_assessment_rows += any(
+                not row[column] for column in CURRENT_ASSESSMENT_COLUMNS
+            )
+    if incomplete_assessment_rows:
+        raise ValueError(
+            f"Current artifact has {incomplete_assessment_rows:,} row(s) missing "
+            "prior/current/proposed assessment values."
+        )
     return {
         "rows": rows,
         "blank_ssl_rows": blank_ssl,
         "duplicate_ssl_rows": duplicate_ssl,
+        "assessment_years": ACTIVE_ASSESSMENT_YEARS,
+        "assessment_stage_complete_rows": rows,
         "sequential_account_ids": True,
-    }
-
-
-def validate_assessments(path: Path) -> dict[str, object]:
-    rows = 0
-    linked = 0
-    unlinked_by_source: Counter[str] = Counter()
-    with gzip.open(path, "rt", encoding="utf-8", newline="") as handle:
-        for rows, row in enumerate(csv.DictReader(handle), start=1):
-            if int(row["assessment_record_id"]) != rows:
-                raise ValueError(f"Non-sequential assessment_record_id at data row {rows}")
-            account_id = row["account_id"]
-            if account_id:
-                numeric_id = int(account_id)
-                if not 1 <= numeric_id <= EXPECTED["property_account_current.csv.gz"]:
-                    raise ValueError(f"Out-of-range assessment account_id {numeric_id}")
-                linked += 1
-            else:
-                unlinked_by_source[row["source_id"]] += 1
-    return {
-        "rows": rows,
-        "linked_to_current_account": linked,
-        "unlinked_by_source": dict(sorted(unlinked_by_source.items())),
-        "sequential_assessment_record_ids": True,
     }
 
 
@@ -100,7 +112,11 @@ def validate_sales(path: Path) -> dict[str, object]:
     with gzip.open(path, "rt", encoding="utf-8", newline="") as handle:
         for rows, row in enumerate(csv.DictReader(handle), start=1):
             account_id = int(row["account_id"])
-            if not previous_account_id < account_id <= 221_263:
+            if not (
+                previous_account_id
+                < account_id
+                <= EXPECTED["property_account_current.csv.gz"]
+            ):
                 raise ValueError(
                     f"Sale account IDs are not strictly ordered at data row {rows}"
                 )
@@ -114,23 +130,23 @@ def validate_sales(path: Path) -> dict[str, object]:
             if len(set(cardinalities)) != 1 or cardinalities[0] == 0:
                 raise ValueError(f"Unequal sale vector cardinalities at row {rows}")
             source_rows += cardinalities[0]
-    if source_rows != 421_436:
+    if source_rows != EXPECTED_LINKED_SALE_ROWS:
         raise ValueError(
-            f"Expected 421,436 linked CAMA rows, found {source_rows:,}"
+            f"Expected {EXPECTED_LINKED_SALE_ROWS:,} linked CAMA rows, "
+            f"found {source_rows:,}"
         )
     return {
         "rows": rows,
         "strictly_ordered_unique_account_ids": True,
         "linked_source_rows": source_rows,
         "all_vector_cardinalities_equal": True,
-        "unlinked_source_rows": 9,
+        "unlinked_source_rows": EXPECTED_UNLINKED_SALE_ROWS,
     }
 
 
 def main() -> None:
     validators = {
         "property_account_current.csv.gz": validate_current,
-        "assessment_snapshot_record.csv.gz": validate_assessments,
         "tax_series.csv.gz": validate_tax,
         "sale_series.csv.gz": validate_sales,
     }

@@ -1,0 +1,1218 @@
+{
+  "receipt_kind": "dc-property-s3-archive",
+  "receipt_version": 1,
+  "provider": "hetzner_object_storage",
+  "endpoint": "https://fsn1.your-objectstorage.com",
+  "region": "fsn1",
+  "bucket": "quoindata",
+  "prefix": "releases/v0.4.0/regulatory-source-snapshots-20260728",
+  "files": [
+    {
+      "relative_path": "data/generated/property_account_current.csv.gz",
+      "bytes": 33208643,
+      "sha256": "89e1544edf01a0a32ef97a8394174ae85d7e04462dfc93ba40dca6f83c70e253",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 33208643,
+          "sha256": "89e1544edf01a0a32ef97a8394174ae85d7e04462dfc93ba40dca6f83c70e253",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/89e1544edf01a0a32ef97a8394174ae85d7e04462dfc93ba40dca6f83c70e253/property_account_current.csv.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/cama_commercial_current.jsonl.gz",
+      "bytes": 577341,
+      "sha256": "bc083e7d4cd9ca19687ced7be5d448b7d37bed2857a56c7717fb2dc400f40de4",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 577341,
+          "sha256": "bc083e7d4cd9ca19687ced7be5d448b7d37bed2857a56c7717fb2dc400f40de4",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/bc083e7d4cd9ca19687ced7be5d448b7d37bed2857a56c7717fb2dc400f40de4/cama_commercial_current.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/cama_commercial_current.manifest.json",
+      "bytes": 8509,
+      "sha256": "bf610d08b73c002132525f1a9e93b6f3c3c2e642165a272fdefe5861bf480ed5",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 8509,
+          "sha256": "bf610d08b73c002132525f1a9e93b6f3c3c2e642165a272fdefe5861bf480ed5",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/bf610d08b73c002132525f1a9e93b6f3c3c2e642165a272fdefe5861bf480ed5/cama_commercial_current.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/cama_condominium_current.jsonl.gz",
+      "bytes": 1472175,
+      "sha256": "0cac3079bf1db3639f118762170199e8fe195134603c30022812ec3157fb5bb8",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 1472175,
+          "sha256": "0cac3079bf1db3639f118762170199e8fe195134603c30022812ec3157fb5bb8",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/0cac3079bf1db3639f118762170199e8fe195134603c30022812ec3157fb5bb8/cama_condominium_current.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/cama_condominium_current.manifest.json",
+      "bytes": 8327,
+      "sha256": "a1cf7d5f2c56b0538347400567b11d11a79a784a0436260cf503ede66ff0027c",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 8327,
+          "sha256": "a1cf7d5f2c56b0538347400567b11d11a79a784a0436260cf503ede66ff0027c",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/a1cf7d5f2c56b0538347400567b11d11a79a784a0436260cf503ede66ff0027c/cama_condominium_current.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/cama_residential_current.jsonl.gz",
+      "bytes": 4158626,
+      "sha256": "07303243a3a2da54d408a2aefaddd83c2818195f92aa9b046bad60def9a4a0ef",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4158626,
+          "sha256": "07303243a3a2da54d408a2aefaddd83c2818195f92aa9b046bad60def9a4a0ef",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/07303243a3a2da54d408a2aefaddd83c2818195f92aa9b046bad60def9a4a0ef/cama_residential_current.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/cama_residential_current.manifest.json",
+      "bytes": 12982,
+      "sha256": "bf22d67547114cf81788c3608a9c450994f54ada460f76dcbb404f7b54b0eb7e",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 12982,
+          "sha256": "bf22d67547114cf81788c3608a9c450994f54ada460f76dcbb404f7b54b0eb7e",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/bf22d67547114cf81788c3608a9c450994f54ada460f76dcbb404f7b54b0eb7e/cama_residential_current.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dlcp_basic_business_licenses.jsonl.gz",
+      "bytes": 27365587,
+      "sha256": "2299e93828aaaf3f6cc4769973bffeb689fccd65fb3d0b62f3499107687eb1a4",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 27365587,
+          "sha256": "2299e93828aaaf3f6cc4769973bffeb689fccd65fb3d0b62f3499107687eb1a4",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/2299e93828aaaf3f6cc4769973bffeb689fccd65fb3d0b62f3499107687eb1a4/dlcp_basic_business_licenses.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dlcp_basic_business_licenses.manifest.json",
+      "bytes": 14703,
+      "sha256": "c185a734ee827b0ac68b09b89da3930dbd2dd1a4319e6953fb8116a09fdb8fb4",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14703,
+          "sha256": "c185a734ee827b0ac68b09b89da3930dbd2dd1a4319e6953fb8116a09fdb8fb4",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/c185a734ee827b0ac68b09b89da3930dbd2dd1a4319e6953fb8116a09fdb8fb4/dlcp_basic_business_licenses.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2009.jsonl.gz",
+      "bytes": 2396324,
+      "sha256": "61108dff74d0325d5bd48cbf5215372b8db8adde835bd95b8be9d6fa06a25ea9",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 2396324,
+          "sha256": "61108dff74d0325d5bd48cbf5215372b8db8adde835bd95b8be9d6fa06a25ea9",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/61108dff74d0325d5bd48cbf5215372b8db8adde835bd95b8be9d6fa06a25ea9/dob_building_permits_2009.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2009.manifest.json",
+      "bytes": 14385,
+      "sha256": "9c94944b1d255ed2d4b4293b92fe2fba88200907718f2180e317e5b9c2b43b46",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14385,
+          "sha256": "9c94944b1d255ed2d4b4293b92fe2fba88200907718f2180e317e5b9c2b43b46",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/9c94944b1d255ed2d4b4293b92fe2fba88200907718f2180e317e5b9c2b43b46/dob_building_permits_2009.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2010.jsonl.gz",
+      "bytes": 3038356,
+      "sha256": "20f0610c83e62732397b43afa009a6d82d0321193181baf7f7b20eb82c2a84c0",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 3038356,
+          "sha256": "20f0610c83e62732397b43afa009a6d82d0321193181baf7f7b20eb82c2a84c0",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/20f0610c83e62732397b43afa009a6d82d0321193181baf7f7b20eb82c2a84c0/dob_building_permits_2010.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2010.manifest.json",
+      "bytes": 14385,
+      "sha256": "d20f7ec9004adf6f21e5086287bd3f23cfe83c0a75285da3ee90ec578eaeab47",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14385,
+          "sha256": "d20f7ec9004adf6f21e5086287bd3f23cfe83c0a75285da3ee90ec578eaeab47",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/d20f7ec9004adf6f21e5086287bd3f23cfe83c0a75285da3ee90ec578eaeab47/dob_building_permits_2010.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2011.jsonl.gz",
+      "bytes": 3369202,
+      "sha256": "66ddde8531f998ea5d3f06d843c38e548fcf807590a25197b66cee5aa078cd75",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 3369202,
+          "sha256": "66ddde8531f998ea5d3f06d843c38e548fcf807590a25197b66cee5aa078cd75",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/66ddde8531f998ea5d3f06d843c38e548fcf807590a25197b66cee5aa078cd75/dob_building_permits_2011.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2011.manifest.json",
+      "bytes": 14385,
+      "sha256": "7df8795e7f448dad9817e9a447a26ab1f50b5bd900175fa20bba01ec9a8aa40f",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14385,
+          "sha256": "7df8795e7f448dad9817e9a447a26ab1f50b5bd900175fa20bba01ec9a8aa40f",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/7df8795e7f448dad9817e9a447a26ab1f50b5bd900175fa20bba01ec9a8aa40f/dob_building_permits_2011.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2012.jsonl.gz",
+      "bytes": 3647042,
+      "sha256": "8bcda10ca2df6b66b91aace4e578554d038ad4e49010810256738544b4a3aee6",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 3647042,
+          "sha256": "8bcda10ca2df6b66b91aace4e578554d038ad4e49010810256738544b4a3aee6",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/8bcda10ca2df6b66b91aace4e578554d038ad4e49010810256738544b4a3aee6/dob_building_permits_2012.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2012.manifest.json",
+      "bytes": 14384,
+      "sha256": "e9ee6821743e7066d264526503f0ec63d51732800e35db7678e276a3ced78128",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14384,
+          "sha256": "e9ee6821743e7066d264526503f0ec63d51732800e35db7678e276a3ced78128",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/e9ee6821743e7066d264526503f0ec63d51732800e35db7678e276a3ced78128/dob_building_permits_2012.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2013.jsonl.gz",
+      "bytes": 3965854,
+      "sha256": "ddd922bc7a081e35ad570d6da591acb02cde262bcfe86768472f7bd6fa9b2083",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 3965854,
+          "sha256": "ddd922bc7a081e35ad570d6da591acb02cde262bcfe86768472f7bd6fa9b2083",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/ddd922bc7a081e35ad570d6da591acb02cde262bcfe86768472f7bd6fa9b2083/dob_building_permits_2013.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2013.manifest.json",
+      "bytes": 14384,
+      "sha256": "8225e8fba94dfdff4ea538c958612df4e4641ebd28618d435a12c3de4eb669b9",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14384,
+          "sha256": "8225e8fba94dfdff4ea538c958612df4e4641ebd28618d435a12c3de4eb669b9",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/8225e8fba94dfdff4ea538c958612df4e4641ebd28618d435a12c3de4eb669b9/dob_building_permits_2013.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2014.jsonl.gz",
+      "bytes": 4219666,
+      "sha256": "594106f69e05b305ca3fcb2cea96559564559563e405b3168d88a6d6be4c5bae",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4219666,
+          "sha256": "594106f69e05b305ca3fcb2cea96559564559563e405b3168d88a6d6be4c5bae",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/594106f69e05b305ca3fcb2cea96559564559563e405b3168d88a6d6be4c5bae/dob_building_permits_2014.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2014.manifest.json",
+      "bytes": 14384,
+      "sha256": "8d23487f93be983f736f7bf1be78c13a2472ff19aef2ae4ec28abf2d28222d09",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14384,
+          "sha256": "8d23487f93be983f736f7bf1be78c13a2472ff19aef2ae4ec28abf2d28222d09",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/8d23487f93be983f736f7bf1be78c13a2472ff19aef2ae4ec28abf2d28222d09/dob_building_permits_2014.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2015.jsonl.gz",
+      "bytes": 4443093,
+      "sha256": "274fa4a2fd6d4c514a3f5cda11644f61a7209fe59f1df18257a5fd6630df1971",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4443093,
+          "sha256": "274fa4a2fd6d4c514a3f5cda11644f61a7209fe59f1df18257a5fd6630df1971",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/274fa4a2fd6d4c514a3f5cda11644f61a7209fe59f1df18257a5fd6630df1971/dob_building_permits_2015.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2015.manifest.json",
+      "bytes": 14385,
+      "sha256": "d4ac36bf1935944fdc728fc12ab7047fa85f44ec27095ae7246e2b4af1bf8491",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14385,
+          "sha256": "d4ac36bf1935944fdc728fc12ab7047fa85f44ec27095ae7246e2b4af1bf8491",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/d4ac36bf1935944fdc728fc12ab7047fa85f44ec27095ae7246e2b4af1bf8491/dob_building_permits_2015.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2016.jsonl.gz",
+      "bytes": 4474836,
+      "sha256": "8fd48711c786e5663a18a51f824810ff1cb05dc46449522feeada73dcdb14859",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4474836,
+          "sha256": "8fd48711c786e5663a18a51f824810ff1cb05dc46449522feeada73dcdb14859",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/8fd48711c786e5663a18a51f824810ff1cb05dc46449522feeada73dcdb14859/dob_building_permits_2016.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2016.manifest.json",
+      "bytes": 14385,
+      "sha256": "7380cc7d402f894818c267690b4d6720e8fe77dc97994ce86968cab127207e06",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14385,
+          "sha256": "7380cc7d402f894818c267690b4d6720e8fe77dc97994ce86968cab127207e06",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/7380cc7d402f894818c267690b4d6720e8fe77dc97994ce86968cab127207e06/dob_building_permits_2016.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2017.jsonl.gz",
+      "bytes": 4620189,
+      "sha256": "33b802604cb970b467634a42b943752d65227b553f833f0f0a7ea41f029cfe47",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4620189,
+          "sha256": "33b802604cb970b467634a42b943752d65227b553f833f0f0a7ea41f029cfe47",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/33b802604cb970b467634a42b943752d65227b553f833f0f0a7ea41f029cfe47/dob_building_permits_2017.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2017.manifest.json",
+      "bytes": 14385,
+      "sha256": "fc9470ef0c488db1f197194e65552e0a7cf127de48f5f2b3edd48a947cac72e2",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14385,
+          "sha256": "fc9470ef0c488db1f197194e65552e0a7cf127de48f5f2b3edd48a947cac72e2",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/fc9470ef0c488db1f197194e65552e0a7cf127de48f5f2b3edd48a947cac72e2/dob_building_permits_2017.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2020.jsonl.gz",
+      "bytes": 4624550,
+      "sha256": "f6532ecb24826adc8700dfbe2fdc8a13b7a33d003e3d511fc23c48a0c75c9fd0",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4624550,
+          "sha256": "f6532ecb24826adc8700dfbe2fdc8a13b7a33d003e3d511fc23c48a0c75c9fd0",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/f6532ecb24826adc8700dfbe2fdc8a13b7a33d003e3d511fc23c48a0c75c9fd0/dob_building_permits_2020.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2020.manifest.json",
+      "bytes": 14384,
+      "sha256": "c2dacb38f73d07efbf85d683c32e0c21c044262030f70a2d72b44018be934b63",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14384,
+          "sha256": "c2dacb38f73d07efbf85d683c32e0c21c044262030f70a2d72b44018be934b63",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/c2dacb38f73d07efbf85d683c32e0c21c044262030f70a2d72b44018be934b63/dob_building_permits_2020.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2021.jsonl.gz",
+      "bytes": 4892927,
+      "sha256": "9adc4214247c243681cc8c8d9e0db99ba700ca499c4981458dc3d35ea9e690f0",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4892927,
+          "sha256": "9adc4214247c243681cc8c8d9e0db99ba700ca499c4981458dc3d35ea9e690f0",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/9adc4214247c243681cc8c8d9e0db99ba700ca499c4981458dc3d35ea9e690f0/dob_building_permits_2021.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2021.manifest.json",
+      "bytes": 14384,
+      "sha256": "427f770558bd76a3a508b342b684e57786805224481672c347a80fa3a715079f",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14384,
+          "sha256": "427f770558bd76a3a508b342b684e57786805224481672c347a80fa3a715079f",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/427f770558bd76a3a508b342b684e57786805224481672c347a80fa3a715079f/dob_building_permits_2021.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2022.jsonl.gz",
+      "bytes": 5159875,
+      "sha256": "310c8ff17aafd3f78a824f2bf4facb238430f202418ef314017133c1e29e1b09",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 5159875,
+          "sha256": "310c8ff17aafd3f78a824f2bf4facb238430f202418ef314017133c1e29e1b09",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/310c8ff17aafd3f78a824f2bf4facb238430f202418ef314017133c1e29e1b09/dob_building_permits_2022.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2022.manifest.json",
+      "bytes": 14385,
+      "sha256": "1727c964262bb33e65e03754ab6153fd0b54fba53a818db93824b58c08cbee19",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14385,
+          "sha256": "1727c964262bb33e65e03754ab6153fd0b54fba53a818db93824b58c08cbee19",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/1727c964262bb33e65e03754ab6153fd0b54fba53a818db93824b58c08cbee19/dob_building_permits_2022.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2023.jsonl.gz",
+      "bytes": 4837211,
+      "sha256": "5d0d44f5ac4f7a82edfe31eccf622a3dda1e06d593d0354d2956e2ea6e3b51fc",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4837211,
+          "sha256": "5d0d44f5ac4f7a82edfe31eccf622a3dda1e06d593d0354d2956e2ea6e3b51fc",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/5d0d44f5ac4f7a82edfe31eccf622a3dda1e06d593d0354d2956e2ea6e3b51fc/dob_building_permits_2023.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2023.manifest.json",
+      "bytes": 14387,
+      "sha256": "f30acb4e1e52610c57504ba5ec91fcce3098f7438d7903e6d5859e2fd2931fbe",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14387,
+          "sha256": "f30acb4e1e52610c57504ba5ec91fcce3098f7438d7903e6d5859e2fd2931fbe",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/f30acb4e1e52610c57504ba5ec91fcce3098f7438d7903e6d5859e2fd2931fbe/dob_building_permits_2023.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2024.jsonl.gz",
+      "bytes": 4914478,
+      "sha256": "269e4c550898fd989eb47f6633d162ff4ff981e35b84390c0ad4d3490cecd18a",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4914478,
+          "sha256": "269e4c550898fd989eb47f6633d162ff4ff981e35b84390c0ad4d3490cecd18a",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/269e4c550898fd989eb47f6633d162ff4ff981e35b84390c0ad4d3490cecd18a/dob_building_permits_2024.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2024.manifest.json",
+      "bytes": 14385,
+      "sha256": "f5155f970543fb52ee2bd0c51ccb6e7fe317e996d0efe74ca9b2c4543ebb4921",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14385,
+          "sha256": "f5155f970543fb52ee2bd0c51ccb6e7fe317e996d0efe74ca9b2c4543ebb4921",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/f5155f970543fb52ee2bd0c51ccb6e7fe317e996d0efe74ca9b2c4543ebb4921/dob_building_permits_2024.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2025.jsonl.gz",
+      "bytes": 5078538,
+      "sha256": "4a31d802a5597cc00a846ef1d545fc9206d2d5ce0377c3363e2114f4b879aca5",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 5078538,
+          "sha256": "4a31d802a5597cc00a846ef1d545fc9206d2d5ce0377c3363e2114f4b879aca5",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/4a31d802a5597cc00a846ef1d545fc9206d2d5ce0377c3363e2114f4b879aca5/dob_building_permits_2025.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2025.manifest.json",
+      "bytes": 14415,
+      "sha256": "fae72ffd892e39fce51e3ab372e23f1290064e20a10c50d56f9578ed95b068d7",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14415,
+          "sha256": "fae72ffd892e39fce51e3ab372e23f1290064e20a10c50d56f9578ed95b068d7",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/fae72ffd892e39fce51e3ab372e23f1290064e20a10c50d56f9578ed95b068d7/dob_building_permits_2025.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2026.jsonl.gz",
+      "bytes": 2909094,
+      "sha256": "699512857c7b9144c4af3a347d2ff9a9e78d875a902d28fe077e435f41ca4a0b",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 2909094,
+          "sha256": "699512857c7b9144c4af3a347d2ff9a9e78d875a902d28fe077e435f41ca4a0b",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/699512857c7b9144c4af3a347d2ff9a9e78d875a902d28fe077e435f41ca4a0b/dob_building_permits_2026.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_building_permits_2026.manifest.json",
+      "bytes": 14385,
+      "sha256": "03112e9809da1e4f458985a50b21e6ae29f947917102d4e5e53abeda7abb8c3c",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14385,
+          "sha256": "03112e9809da1e4f458985a50b21e6ae29f947917102d4e5e53abeda7abb8c3c",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/03112e9809da1e4f458985a50b21e6ae29f947917102d4e5e53abeda7abb8c3c/dob_building_permits_2026.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_certificates_of_occupancy.jsonl.gz",
+      "bytes": 8004825,
+      "sha256": "e9880233f7b6fa4287da543da9f01a2ec8e37d2c9101d4d084acf09ae3c61c31",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 8004825,
+          "sha256": "e9880233f7b6fa4287da543da9f01a2ec8e37d2c9101d4d084acf09ae3c61c31",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/e9880233f7b6fa4287da543da9f01a2ec8e37d2c9101d4d084acf09ae3c61c31/dob_certificates_of_occupancy.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_certificates_of_occupancy.manifest.json",
+      "bytes": 12552,
+      "sha256": "cd91127cd68ef17acc315cf4e6b80afa7f472465e04839cb801d6dc101748749",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 12552,
+          "sha256": "cd91127cd68ef17acc315cf4e6b80afa7f472465e04839cb801d6dc101748749",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/cd91127cd68ef17acc315cf4e6b80afa7f472465e04839cb801d6dc101748749/dob_certificates_of_occupancy.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_vacant_blighted_addresses.jsonl.gz",
+      "bytes": 95246,
+      "sha256": "201ca4e403acb7cac88e3de0c2a8871fd3afe87e17105cf210418626dd8f1ec3",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 95246,
+          "sha256": "201ca4e403acb7cac88e3de0c2a8871fd3afe87e17105cf210418626dd8f1ec3",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/201ca4e403acb7cac88e3de0c2a8871fd3afe87e17105cf210418626dd8f1ec3/dob_vacant_blighted_addresses.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/dob_vacant_blighted_addresses.manifest.json",
+      "bytes": 17500,
+      "sha256": "dc6b96b19502d90984440cccb72f9ad9ba618fd18a25189fef4a2d057a740cfe",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 17500,
+          "sha256": "dc6b96b19502d90984440cccb72f9ad9ba618fd18a25189fef4a2d057a740cfe",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/dc6b96b19502d90984440cccb72f9ad9ba618fd18a25189fef4a2d057a740cfe/dob_vacant_blighted_addresses.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/doee_beps_current.jsonl.gz",
+      "bytes": 192230,
+      "sha256": "ab69374f97c402832cc3fdae5449f35a40edc46ffdf73bf97ce4cbcafb6ccf31",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 192230,
+          "sha256": "ab69374f97c402832cc3fdae5449f35a40edc46ffdf73bf97ce4cbcafb6ccf31",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/ab69374f97c402832cc3fdae5449f35a40edc46ffdf73bf97ce4cbcafb6ccf31/doee_beps_current.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/doee_beps_current.manifest.json",
+      "bytes": 13253,
+      "sha256": "c91fffe482dbaa917cf796d56076f711d17e5fcf3c7aab950475266eefd153f6",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 13253,
+          "sha256": "c91fffe482dbaa917cf796d56076f711d17e5fcf3c7aab950475266eefd153f6",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/c91fffe482dbaa917cf796d56076f711d17e5fcf3c7aab950475266eefd153f6/doee_beps_current.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/doee_energy_benchmarking.jsonl.gz",
+      "bytes": 2033951,
+      "sha256": "e8e51d131e60b088a6ffd0365c6355ce40e19cf7b6b9aa1182beb0beb960e546",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 2033951,
+          "sha256": "e8e51d131e60b088a6ffd0365c6355ce40e19cf7b6b9aa1182beb0beb960e546",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/e8e51d131e60b088a6ffd0365c6355ce40e19cf7b6b9aa1182beb0beb960e546/doee_energy_benchmarking.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/doee_energy_benchmarking.manifest.json",
+      "bytes": 26329,
+      "sha256": "f9db1c841433d2dd31acc6f4bad1e8980f313a2ccfe548d41702cbb0482b651f",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 26329,
+          "sha256": "f9db1c841433d2dd31acc6f4bad1e8980f313a2ccfe548d41702cbb0482b651f",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/f9db1c841433d2dd31acc6f4bad1e8980f313a2ccfe548d41702cbb0482b651f/doee_energy_benchmarking.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_20260728/run.manifest.json",
+      "bytes": 8166,
+      "sha256": "386647950e1b1caeecf16ca1b8df82cf93a75a4661f735ec87e7464e493a79b7",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 8166,
+          "sha256": "386647950e1b1caeecf16ca1b8df82cf93a75a4661f735ec87e7464e493a79b7",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/386647950e1b1caeecf16ca1b8df82cf93a75a4661f735ec87e7464e493a79b7/run.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_ddot_inspections_20260728/ddot_tops_nonpermit_inspections.jsonl.gz",
+      "bytes": 2037702,
+      "sha256": "e04b3450e6039e096e276861bbc93dd788138bd1e5ad61df8d378d8611853747",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 2037702,
+          "sha256": "e04b3450e6039e096e276861bbc93dd788138bd1e5ad61df8d378d8611853747",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/e04b3450e6039e096e276861bbc93dd788138bd1e5ad61df8d378d8611853747/ddot_tops_nonpermit_inspections.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_ddot_inspections_20260728/ddot_tops_nonpermit_inspections.manifest.json",
+      "bytes": 11613,
+      "sha256": "6c5d45de8b9a93b16ff24039f8de7ed553ba18f2bb5b505cb7beac4ff3ab777b",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 11613,
+          "sha256": "6c5d45de8b9a93b16ff24039f8de7ed553ba18f2bb5b505cb7beac4ff3ab777b",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/6c5d45de8b9a93b16ff24039f8de7ed553ba18f2bb5b505cb7beac4ff3ab777b/ddot_tops_nonpermit_inspections.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_ddot_inspections_20260728/ddot_tops_permit_inspections.jsonl.gz",
+      "bytes": 39944082,
+      "sha256": "3ad0c4bf1642d9ff74a16be959ad7dae21ba1c198e02e8509a79af4697b217ac",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 39944082,
+          "sha256": "3ad0c4bf1642d9ff74a16be959ad7dae21ba1c198e02e8509a79af4697b217ac",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/3ad0c4bf1642d9ff74a16be959ad7dae21ba1c198e02e8509a79af4697b217ac/ddot_tops_permit_inspections.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_ddot_inspections_20260728/ddot_tops_permit_inspections.manifest.json",
+      "bytes": 10396,
+      "sha256": "9e2855822623294e9437c96bb2b30af02b8dde2c4e99514cc94dd90586254248",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 10396,
+          "sha256": "9e2855822623294e9437c96bb2b30af02b8dde2c4e99514cc94dd90586254248",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/9e2855822623294e9437c96bb2b30af02b8dde2c4e99514cc94dd90586254248/ddot_tops_permit_inspections.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_ddot_inspections_20260728/run.manifest.json",
+      "bytes": 1013,
+      "sha256": "6590682c16a04bdaefbb30153d0bab3e98b238dd41994edd43b219c7407e4983",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 1013,
+          "sha256": "6590682c16a04bdaefbb30153d0bab3e98b238dd41994edd43b219c7407e4983",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/6590682c16a04bdaefbb30153d0bab3e98b238dd41994edd43b219c7407e4983/run.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_patch_v4_20260728/dob_building_permits_2018.jsonl.gz",
+      "bytes": 4659307,
+      "sha256": "194a7a332857d8318077066f8c788569a371e5d428c4aa87e402dd7a7fb59a80",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4659307,
+          "sha256": "194a7a332857d8318077066f8c788569a371e5d428c4aa87e402dd7a7fb59a80",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/194a7a332857d8318077066f8c788569a371e5d428c4aa87e402dd7a7fb59a80/dob_building_permits_2018.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_patch_v4_20260728/dob_building_permits_2018.manifest.json",
+      "bytes": 14663,
+      "sha256": "6d36b668a7c472cf049821ceeee398db93f73f8d5acfc9a2c9d305b7d10adf43",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14663,
+          "sha256": "6d36b668a7c472cf049821ceeee398db93f73f8d5acfc9a2c9d305b7d10adf43",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/6d36b668a7c472cf049821ceeee398db93f73f8d5acfc9a2c9d305b7d10adf43/dob_building_permits_2018.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_patch_v4_20260728/dob_building_permits_2019.jsonl.gz",
+      "bytes": 5041820,
+      "sha256": "238acd17483c9e728ba5e3657abadb1587d1a1dd86f0bec7d540d11b35ecc18f",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 5041820,
+          "sha256": "238acd17483c9e728ba5e3657abadb1587d1a1dd86f0bec7d540d11b35ecc18f",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/238acd17483c9e728ba5e3657abadb1587d1a1dd86f0bec7d540d11b35ecc18f/dob_building_permits_2019.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_patch_v4_20260728/dob_building_permits_2019.manifest.json",
+      "bytes": 14663,
+      "sha256": "779cda4e8162f984704b56ae9ee191e8d3f69e31cfd6105b37fedae54f89aab5",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14663,
+          "sha256": "779cda4e8162f984704b56ae9ee191e8d3f69e31cfd6105b37fedae54f89aab5",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/779cda4e8162f984704b56ae9ee191e8d3f69e31cfd6105b37fedae54f89aab5/dob_building_permits_2019.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_patch_v4_20260728/dob_certificate_of_occupancy.jsonl.gz",
+      "bytes": 8004825,
+      "sha256": "e9880233f7b6fa4287da543da9f01a2ec8e37d2c9101d4d084acf09ae3c61c31",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 8004825,
+          "sha256": "e9880233f7b6fa4287da543da9f01a2ec8e37d2c9101d4d084acf09ae3c61c31",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/e9880233f7b6fa4287da543da9f01a2ec8e37d2c9101d4d084acf09ae3c61c31/dob_certificate_of_occupancy.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_patch_v4_20260728/dob_certificate_of_occupancy.manifest.json",
+      "bytes": 12704,
+      "sha256": "498b62e55490b25271338576737e1e667b8e51ccc4fe0f269d5165914ad83a6b",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 12704,
+          "sha256": "498b62e55490b25271338576737e1e667b8e51ccc4fe0f269d5165914ad83a6b",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/498b62e55490b25271338576737e1e667b8e51ccc4fe0f269d5165914ad83a6b/dob_certificate_of_occupancy.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_patch_v4_20260728/run.manifest.json",
+      "bytes": 1274,
+      "sha256": "a212f08d4c3faaff00a423f80641039786578f3cc02330003d2cc71774925ba8",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 1274,
+          "sha256": "a212f08d4c3faaff00a423f80641039786578f3cc02330003d2cc71774925ba8",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/a212f08d4c3faaff00a423f80641039786578f3cc02330003d2cc71774925ba8/run.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/abca_alcohol_license_locations.jsonl.gz",
+      "bytes": 218861,
+      "sha256": "8bd41db51cd6269901c624402756085917a059509ff898a0e6205cd56dfdb72e",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 218861,
+          "sha256": "8bd41db51cd6269901c624402756085917a059509ff898a0e6205cd56dfdb72e",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/8bd41db51cd6269901c624402756085917a059509ff898a0e6205cd56dfdb72e/abca_alcohol_license_locations.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/abca_alcohol_license_locations.manifest.json",
+      "bytes": 13915,
+      "sha256": "47fdef68f0dd4119180394243c0bf9baebe543243645a0fd781dba40302d7906",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 13915,
+          "sha256": "47fdef68f0dd4119180394243c0bf9baebe543243645a0fd781dba40302d7906",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/47fdef68f0dd4119180394243c0bf9baebe543243645a0fd781dba40302d7906/abca_alcohol_license_locations.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/ddot_annual_public_space_rental_permits.jsonl.gz",
+      "bytes": 182976,
+      "sha256": "109aa4d1d2283c36e8eafc15da89e1945095750b638f02191181e1b10ccb08ce",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 182976,
+          "sha256": "109aa4d1d2283c36e8eafc15da89e1945095750b638f02191181e1b10ccb08ce",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/109aa4d1d2283c36e8eafc15da89e1945095750b638f02191181e1b10ccb08ce/ddot_annual_public_space_rental_permits.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/ddot_annual_public_space_rental_permits.manifest.json",
+      "bytes": 16473,
+      "sha256": "6275d5dab6ac0869e6cf3df21f8edaef76ae3cba77c5a9d1738d976bd442f08c",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 16473,
+          "sha256": "6275d5dab6ac0869e6cf3df21f8edaef76ae3cba77c5a9d1738d976bd442f08c",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/6275d5dab6ac0869e6cf3df21f8edaef76ae3cba77c5a9d1738d976bd442f08c/ddot_annual_public_space_rental_permits.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/ddot_emergency_work_requests.jsonl.gz",
+      "bytes": 4741324,
+      "sha256": "a267e7ede659994ce761e782ea9747eb12a1a30279bad5801be8510d1418013f",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4741324,
+          "sha256": "a267e7ede659994ce761e782ea9747eb12a1a30279bad5801be8510d1418013f",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/a267e7ede659994ce761e782ea9747eb12a1a30279bad5801be8510d1418013f/ddot_emergency_work_requests.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/ddot_emergency_work_requests.manifest.json",
+      "bytes": 9787,
+      "sha256": "bb8702939c23e57bdc7ff386dbcf22b6e1da35f62cedf1dfdc6eedc0c3de6a32",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 9787,
+          "sha256": "bb8702939c23e57bdc7ff386dbcf22b6e1da35f62cedf1dfdc6eedc0c3de6a32",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/bb8702939c23e57bdc7ff386dbcf22b6e1da35f62cedf1dfdc6eedc0c3de6a32/ddot_emergency_work_requests.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/ddot_special_tree_permits.jsonl.gz",
+      "bytes": 1406271,
+      "sha256": "026f43c3f63e394970a52cc24832dab5ebcfbe4369f7f088e53e4a6d4ca79204",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 1406271,
+          "sha256": "026f43c3f63e394970a52cc24832dab5ebcfbe4369f7f088e53e4a6d4ca79204",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/026f43c3f63e394970a52cc24832dab5ebcfbe4369f7f088e53e4a6d4ca79204/ddot_special_tree_permits.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/ddot_special_tree_permits.manifest.json",
+      "bytes": 14697,
+      "sha256": "ecfbeb584cbc3be648b13ef82c4a6bd782eefe8c5ac3d72ca6bb6bb820edb1b0",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 14697,
+          "sha256": "ecfbeb584cbc3be648b13ef82c4a6bd782eefe8c5ac3d72ca6bb6bb820edb1b0",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/ecfbeb584cbc3be648b13ef82c4a6bd782eefe8c5ac3d72ca6bb6bb820edb1b0/ddot_special_tree_permits.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/dob_home_occupancy_permits.jsonl.gz",
+      "bytes": 555583,
+      "sha256": "2a9a5c824f718f6f95d99bdda6db9b074b361ee74ebcbed2748d3b37b966ab92",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 555583,
+          "sha256": "2a9a5c824f718f6f95d99bdda6db9b074b361ee74ebcbed2748d3b37b966ab92",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/2a9a5c824f718f6f95d99bdda6db9b074b361ee74ebcbed2748d3b37b966ab92/dob_home_occupancy_permits.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/dob_home_occupancy_permits.manifest.json",
+      "bytes": 10557,
+      "sha256": "e03a67ddd6860e359efe6ba0f41b5b78ea152a2d639d37944cd52419713e86e0",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 10557,
+          "sha256": "e03a67ddd6860e359efe6ba0f41b5b78ea152a2d639d37944cd52419713e86e0",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/e03a67ddd6860e359efe6ba0f41b5b78ea152a2d639d37944cd52419713e86e0/dob_home_occupancy_permits.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/doee_well_permits.jsonl.gz",
+      "bytes": 158522,
+      "sha256": "0892fa44e592b822df2ec4250f2ee588d9e59925498fc72f9dd2836c194bf233",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 158522,
+          "sha256": "0892fa44e592b822df2ec4250f2ee588d9e59925498fc72f9dd2836c194bf233",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/0892fa44e592b822df2ec4250f2ee588d9e59925498fc72f9dd2836c194bf233/doee_well_permits.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/doee_well_permits.manifest.json",
+      "bytes": 3256,
+      "sha256": "5915bdd965d2be24b21c2e7d2a9d53528187cdb55c0593073d25109a694b14b3",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 3256,
+          "sha256": "5915bdd965d2be24b21c2e7d2a9d53528187cdb55c0593073d25109a694b14b3",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/5915bdd965d2be24b21c2e7d2a9d53528187cdb55c0593073d25109a694b14b3/doee_well_permits.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_small_20260728/run.manifest.json",
+      "bytes": 2237,
+      "sha256": "f86d2d969091421260ac6122253aea559c407f8c5a389328c090d64898d40c5e",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 2237,
+          "sha256": "f86d2d969091421260ac6122253aea559c407f8c5a389328c090d64898d40c5e",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/f86d2d969091421260ac6122253aea559c407f8c5a389328c090d64898d40c5e/run.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_smoke_20260728/abca_medical_cannabis_nonretailers.jsonl.gz",
+      "bytes": 2121,
+      "sha256": "ff598a5052bd83bbd361dab748239639dedea514087316642f7c6fdda9244c3b",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 2121,
+          "sha256": "ff598a5052bd83bbd361dab748239639dedea514087316642f7c6fdda9244c3b",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/ff598a5052bd83bbd361dab748239639dedea514087316642f7c6fdda9244c3b/abca_medical_cannabis_nonretailers.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_smoke_20260728/abca_medical_cannabis_nonretailers.manifest.json",
+      "bytes": 6882,
+      "sha256": "53d6c696975ec6e3754aacbb042456fc2e2dbd896e1d4338c3c831bc4f05b145",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 6882,
+          "sha256": "53d6c696975ec6e3754aacbb042456fc2e2dbd896e1d4338c3c831bc4f05b145",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/53d6c696975ec6e3754aacbb042456fc2e2dbd896e1d4338c3c831bc4f05b145/abca_medical_cannabis_nonretailers.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_smoke_20260728/abca_medical_cannabis_retailers.jsonl.gz",
+      "bytes": 6970,
+      "sha256": "93da7542145d813c29ca0de2eb4beb6ad2d5d42bfd988fd54d0483c94f878736",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 6970,
+          "sha256": "93da7542145d813c29ca0de2eb4beb6ad2d5d42bfd988fd54d0483c94f878736",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/93da7542145d813c29ca0de2eb4beb6ad2d5d42bfd988fd54d0483c94f878736/abca_medical_cannabis_retailers.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_smoke_20260728/abca_medical_cannabis_retailers.manifest.json",
+      "bytes": 6525,
+      "sha256": "130828b6860cc0139d22be2eb0339478d93e3c003ec0e51df515e75567333c29",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 6525,
+          "sha256": "130828b6860cc0139d22be2eb0339478d93e3c003ec0e51df515e75567333c29",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/130828b6860cc0139d22be2eb0339478d93e3c003ec0e51df515e75567333c29/abca_medical_cannabis_retailers.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_regulatory_smoke_20260728/run.manifest.json",
+      "bytes": 977,
+      "sha256": "268007068724666a0391c927587f4b08d8a526fe5550ea3d270937ede4c3c0a9",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 977,
+          "sha256": "268007068724666a0391c927587f4b08d8a526fe5550ea3d270937ede4c3c0a9",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/268007068724666a0391c927587f4b08d8a526fe5550ea3d270937ede4c3c0a9/run.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_tops_occupancy_retry_20260728/ddot_tops_occupancy_permits.jsonl.gz",
+      "bytes": 83600017,
+      "sha256": "1e108a7874c933168dcc7772cdbd2132c462e089ad6850ef31d01124521e068b",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 83600017,
+          "sha256": "1e108a7874c933168dcc7772cdbd2132c462e089ad6850ef31d01124521e068b",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/1e108a7874c933168dcc7772cdbd2132c462e089ad6850ef31d01124521e068b/ddot_tops_occupancy_permits.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_tops_occupancy_retry_20260728/ddot_tops_occupancy_permits.manifest.json",
+      "bytes": 21461,
+      "sha256": "482a87e090e6e1221cd4985f866329c95a38a1f731d076bdaa642b24fe6ad258",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 21461,
+          "sha256": "482a87e090e6e1221cd4985f866329c95a38a1f731d076bdaa642b24fe6ad258",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/482a87e090e6e1221cd4985f866329c95a38a1f731d076bdaa642b24fe6ad258/ddot_tops_occupancy_permits.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_tops_occupancy_retry_20260728/run.manifest.json",
+      "bytes": 683,
+      "sha256": "eedf15ea8c930094c323c1dd4e32c0dbc54caebc5279c27e7919e6ead0dba021",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 683,
+          "sha256": "eedf15ea8c930094c323c1dd4e32c0dbc54caebc5279c27e7919e6ead0dba021",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/eedf15ea8c930094c323c1dd4e32c0dbc54caebc5279c27e7919e6ead0dba021/run.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_tops_permits_20260728/ddot_tops_construction_permits.jsonl.gz",
+      "bytes": 65623073,
+      "sha256": "1062e1564b55f22079590d7287652dfa466a51c8c74eb2db2a1ef5ba11a3fde4",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 65623073,
+          "sha256": "1062e1564b55f22079590d7287652dfa466a51c8c74eb2db2a1ef5ba11a3fde4",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/1062e1564b55f22079590d7287652dfa466a51c8c74eb2db2a1ef5ba11a3fde4/ddot_tops_construction_permits.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_tops_permits_20260728/ddot_tops_construction_permits.manifest.json",
+      "bytes": 17308,
+      "sha256": "0e1d2d79ed883c7d74ab51557e83bc1fb875dd121ca71880e7f37570f44e3375",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 17308,
+          "sha256": "0e1d2d79ed883c7d74ab51557e83bc1fb875dd121ca71880e7f37570f44e3375",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/0e1d2d79ed883c7d74ab51557e83bc1fb875dd121ca71880e7f37570f44e3375/ddot_tops_construction_permits.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/regulatory/raw/dc_official_tops_permits_20260728/run.manifest.json",
+      "bytes": 812,
+      "sha256": "f6c7f0e290a664e89aa8b41851722c757bf44489284d1dbeafb024f0c45fc3bd",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 812,
+          "sha256": "f6c7f0e290a664e89aa8b41851722c757bf44489284d1dbeafb024f0c45fc3bd",
+          "object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/sha256/f6c7f0e290a664e89aa8b41851722c757bf44489284d1dbeafb024f0c45fc3bd/run.manifest.json"
+        }
+      ]
+    }
+  ],
+  "archive_id": "201fff966baff319ae051291e6d43428cdcf6b4eb809ab3d3f2b550183e6319f",
+  "status": "verified",
+  "receipt_object_key": "releases/v0.4.0/regulatory-source-snapshots-20260728/receipts/201fff966baff319ae051291e6d43428cdcf6b4eb809ab3d3f2b550183e6319f.json"
+}

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import pg from "pg";
+import { adminDatabaseConfig } from "../scripts/lib/hosted-db.mjs";
 
 const project = resolve(import.meta.dirname, "..");
 const env = Object.fromEntries(
@@ -14,12 +15,7 @@ const env = Object.fromEntries(
 );
 
 const client = new pg.Client({
-  host: `db.${env.SUPABASE_PROJECT_REF}.supabase.co`,
-  port: 5432,
-  database: "postgres",
-  user: "postgres",
-  password: env.SUPABASE_DB_PASSWORD,
-  ssl: { rejectUnauthorized: false },
+  ...adminDatabaseConfig({ ...env, ...process.env }),
   connectionTimeoutMillis: 30_000,
 });
 

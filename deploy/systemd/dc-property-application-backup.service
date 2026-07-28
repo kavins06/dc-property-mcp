@@ -1,0 +1,19 @@
+[Unit]
+Description=D.C. Property verified application backup
+After=postgresql@18-dcproperty.service network-online.target
+Wants=network-online.target
+OnFailure=dc-property-backup-failure@%n.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/dc-property-mcp-v0.4.0
+ExecStart=/usr/bin/node --env-file=/opt/dc-property-mcp-v0.4.0/.env.hosted scripts/run-production-backup.mjs
+Nice=15
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=12h
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true

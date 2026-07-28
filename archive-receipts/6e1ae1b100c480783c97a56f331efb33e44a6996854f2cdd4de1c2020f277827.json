@@ -1,0 +1,70 @@
+{
+  "receipt_kind": "dc-property-s3-archive",
+  "receipt_version": 1,
+  "provider": "hetzner_object_storage",
+  "endpoint": "https://fsn1.your-objectstorage.com",
+  "region": "fsn1",
+  "bucket": "quoindata",
+  "prefix": "releases/v0.4.0/production-release-evidence-20260728",
+  "files": [
+    {
+      "relative_path": "db/reports/generated/authenticated-mcp-candidate-0.4.0.json",
+      "bytes": 1905,
+      "sha256": "094c6a13faf65622e25aaa524b1e2f3ffbf31c27d55be5a8aca54d98acc1627d",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 1905,
+          "sha256": "094c6a13faf65622e25aaa524b1e2f3ffbf31c27d55be5a8aca54d98acc1627d",
+          "object_key": "releases/v0.4.0/production-release-evidence-20260728/sha256/094c6a13faf65622e25aaa524b1e2f3ffbf31c27d55be5a8aca54d98acc1627d/authenticated-mcp-candidate-0.4.0.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "db/reports/generated/authenticated-mcp-production-0.4.0.json",
+      "bytes": 1867,
+      "sha256": "ab238e9a66f537447393052c6f3c6d927ac189a04447617c39f412dbd809f9f5",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 1867,
+          "sha256": "ab238e9a66f537447393052c6f3c6d927ac189a04447617c39f412dbd809f9f5",
+          "object_key": "releases/v0.4.0/production-release-evidence-20260728/sha256/ab238e9a66f537447393052c6f3c6d927ac189a04447617c39f412dbd809f9f5/authenticated-mcp-production-0.4.0.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "db/reports/generated/release-0.4.0.json",
+      "bytes": 358,
+      "sha256": "b07355678f01a89c33b14f9418b2a5b194b75d54dce661da312c3494ff586661",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 358,
+          "sha256": "b07355678f01a89c33b14f9418b2a5b194b75d54dce661da312c3494ff586661",
+          "object_key": "releases/v0.4.0/production-release-evidence-20260728/sha256/b07355678f01a89c33b14f9418b2a5b194b75d54dce661da312c3494ff586661/release-0.4.0.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "docs/releases/v0.4.0.md",
+      "bytes": 4003,
+      "sha256": "08de07397dc068a31526519ed51cb7dd09fde75096401a19aa9ce70e7ec5a55b",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4003,
+          "sha256": "08de07397dc068a31526519ed51cb7dd09fde75096401a19aa9ce70e7ec5a55b",
+          "object_key": "releases/v0.4.0/production-release-evidence-20260728/sha256/08de07397dc068a31526519ed51cb7dd09fde75096401a19aa9ce70e7ec5a55b/v0.4.0.md"
+        }
+      ]
+    }
+  ],
+  "archive_id": "6e1ae1b100c480783c97a56f331efb33e44a6996854f2cdd4de1c2020f277827",
+  "status": "verified",
+  "receipt_object_key": "releases/v0.4.0/production-release-evidence-20260728/receipts/6e1ae1b100c480783c97a56f331efb33e44a6996854f2cdd4de1c2020f277827.json"
+}

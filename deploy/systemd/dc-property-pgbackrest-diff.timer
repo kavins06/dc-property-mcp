@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily D.C. Property PostgreSQL differential backup timer
+
+[Timer]
+OnCalendar=Tue..Sun *-*-* 03:30:00 UTC
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target

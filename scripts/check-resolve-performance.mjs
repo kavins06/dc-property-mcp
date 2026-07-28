@@ -1,18 +1,11 @@
 import pg from "../loader/node_modules/pg/lib/index.js";
-
-function connectionString(user, password) {
-  return (
-    `postgresql://${user}:${encodeURIComponent(password)}` +
-    `@db.${process.env.SUPABASE_PROJECT_REF}.supabase.co:5432/postgres`
-  );
-}
+import {
+  adminDatabaseConfig,
+  runtimeDatabaseConfig,
+} from "./lib/hosted-db.mjs";
 
 const admin = new pg.Client({
-  connectionString: connectionString(
-    "postgres",
-    process.env.SUPABASE_DB_PASSWORD,
-  ),
-  ssl: { rejectUnauthorized: false },
+  ...adminDatabaseConfig(process.env),
 });
 
 await admin.connect();
@@ -33,8 +26,14 @@ try {
       )
     order by indexname
   `);
-  if (Number(size.rows[0].bytes) > 480_000_000) {
-    throw new Error("PostgreSQL 480 MB free-tier safety gate failed.");
+  const databaseSizeBytes = Number(size.rows[0].bytes);
+  if (databaseSizeBytes > 40_000_000_000) {
+    throw new Error("PostgreSQL 40 GB shared-volume safety gate failed.");
+  }
+  if (databaseSizeBytes > 25_000_000_000) {
+    process.stderr.write(
+      "Warning: PostgreSQL database size exceeds the 25 GB review threshold.\n",
+    );
   }
   if (indexes.rowCount < 4) {
     throw new Error("Required resolver indexes are missing.");
@@ -48,11 +47,7 @@ try {
 }
 
 const runtime = new pg.Client({
-  connectionString: connectionString(
-    "mcp_runtime",
-    process.env.DC_PROPERTY_RUNTIME_PASSWORD,
-  ),
-  ssl: { rejectUnauthorized: false },
+  ...runtimeDatabaseConfig(process.env),
   statement_timeout: 5_000,
 });
 

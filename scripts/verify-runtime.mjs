@@ -1,10 +1,8 @@
 import pg from "../loader/node_modules/pg/lib/index.js";
+import { runtimeDatabaseConfig } from "./lib/hosted-db.mjs";
 
 const client = new pg.Client({
-  connectionString:
-    `postgresql://mcp_runtime:${encodeURIComponent(process.env.DC_PROPERTY_RUNTIME_PASSWORD)}` +
-    `@db.${process.env.SUPABASE_PROJECT_REF}.supabase.co:5432/postgres`,
-  ssl: { rejectUnauthorized: false },
+  ...runtimeDatabaseConfig(process.env),
   statement_timeout: 8000,
   application_name: "dc-property-runtime-verification",
 });

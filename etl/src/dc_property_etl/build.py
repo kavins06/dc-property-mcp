@@ -26,41 +26,17 @@ GENERATED = PROJECT / "data" / "generated"
 MANIFEST_DIR = PROJECT / "data" / "manifests"
 REPORT_DIR = PROJECT / "db" / "reports" / "generated"
 
-SOURCES = [
-    {
-        "source_id": "itspe_2017_archive",
-        "path": WORKSPACE / "assessment_history_raw" / "ITSPE_snapshot_2017-02-16.csv",
-        "archive_capture_at": "2017-02-16T21:19:48Z",
-        "retrieved_at": None,
-        "source_url": (
-            "https://web.archive.org/web/20170216211948id_/"
-            "http://opendata.dc.gov/datasets/496533836db640bcade61dd9078b0d63_53.csv"
-        ),
-        "years": {"prior": 2016, "current": 2017, "proposed": 2018},
-    },
-    {
-        "source_id": "itspe_2021_archive",
-        "path": WORKSPACE / "assessment_history_raw" / "ITSPE_snapshot_2021-11-26.csv",
-        "archive_capture_at": "2021-11-26T11:42:11Z",
-        "retrieved_at": None,
-        "source_url": (
-            "https://web.archive.org/web/20211126114211id_/"
-            "https://opendata.dc.gov/datasets/496533836db640bcade61dd9078b0d63_53.csv"
-        ),
-        "years": {"prior": 2020, "current": 2021, "proposed": 2022},
-    },
-    {
-        "source_id": "itspe_current",
-        "path": WORKSPACE / "ITSPE.csv",
-        "archive_capture_at": None,
-        "retrieved_at": "2026-07-26T17:50:23-04:00",
-        "source_url": (
-            "https://opendata.dc.gov/api/download/v1/items/"
-            "1476813cbc2d458394ce586ce06d3edd/csv?layers=53"
-        ),
-        "years": {"prior": 2025, "current": 2026, "proposed": 2027},
-    },
-]
+ITSPE_SOURCE = {
+    "source_id": "itspe_current",
+    "path": WORKSPACE / "ITSPE.csv",
+    "archive_capture_at": None,
+    "retrieved_at": "2026-07-26T17:50:23-04:00",
+    "source_url": (
+        "https://opendata.dc.gov/api/download/v1/items/"
+        "1476813cbc2d458394ce586ce06d3edd/csv?layers=53"
+    ),
+    "years": {"prior": 2025, "current": 2026, "proposed": 2027},
+}
 
 CAMA_SOURCE = {
     "source_id": "cama_sales_current",
@@ -96,12 +72,6 @@ CURRENT_FIELDS = [
     "PACEBALANCE", "SWWSADTOTALDUE", "SWWSADCOLLECTED", "SWWSADBALANCE",
     "EXTRACTDAT",
 ]
-
-ASSESSMENT_FIELDS = {
-    "prior": ("OLDLAND", "OLDIMPR", "OLDTOTAL"),
-    "current": ("PHASELAND", "PHASEBUILD", "ASSESSMENT"),
-    "proposed": ("NEWLAND", "NEWIMPR", "NEWTOTAL"),
-}
 
 TAX_SLOTS = ["CY1", "CY2"] + [f"PY{i}" for i in range(1, 11)]
 TAX_SUFFIXES = ["YEAR", "TXSALE", "TAX", "PEN", "INT", "FEE", "TOTDUE", "COLL", "BAL", "CR"]
@@ -218,7 +188,7 @@ def convert_current(field: str, value: str | None) -> str:
 
 
 def build_current() -> dict[str, object]:
-    source = SOURCES[-1]
+    source = ITSPE_SOURCE
     path = Path(source["path"])
     output = GENERATED / "property_account_current.csv.gz"
     output_fields = [
@@ -338,74 +308,8 @@ def build_current() -> dict[str, object]:
     return artifact(output, rows)
 
 
-def build_assessments() -> dict[str, object]:
-    output = GENERATED / "assessment_snapshot_record.csv.gz"
-    fields = [
-        "assessment_record_id", "source_id", "source_row_number", "account_id",
-        "ssl_raw", "ssl_normalized",
-        "source_internalid", "source_objectid", "source_globalid",
-        "record_extract_at", "archive_capture_at", "dataset_retrieved_at",
-    ]
-    for stage in ("prior", "current", "proposed"):
-        fields.extend(
-            [
-                f"{stage}_tax_year", f"{stage}_land_value",
-                f"{stage}_improvement_value", f"{stage}_total_value",
-            ]
-        )
-    rows = 0
-    current_account_by_ssl: dict[str, int] = {}
-    with Path(SOURCES[-1]["path"]).open(
-        "r", encoding="utf-8-sig", errors="replace", newline=""
-    ) as current_handle:
-        for source_row, row in enumerate(csv.DictReader(current_handle), start=2):
-            current_account_by_ssl[normalize_ssl(row.get("SSL"))] = source_row - 1
-    with gzip.open(output, "wt", encoding="utf-8", newline="", compresslevel=6) as out_handle:
-        writer = csv.DictWriter(out_handle, fieldnames=fields)
-        writer.writeheader()
-        for source in SOURCES:
-            path = Path(source["path"])
-            source_ssl_counts: Counter[str] = Counter()
-            with path.open(
-                "r", encoding="utf-8-sig", errors="replace", newline=""
-            ) as count_handle:
-                for count_row in csv.DictReader(count_handle):
-                    source_ssl_counts[normalize_ssl(count_row.get("SSL"))] += 1
-            with path.open("r", encoding="utf-8-sig", errors="replace", newline="") as in_handle:
-                reader = csv.DictReader(in_handle)
-                for source_row, row in enumerate(reader, start=2):
-                    normalized_ssl = normalize_ssl(row.get("SSL"))
-                    linked_account = (
-                        current_account_by_ssl.get(normalized_ssl, "")
-                        if normalized_ssl and source_ssl_counts[normalized_ssl] == 1
-                        else ""
-                    )
-                    out = {
-                        "assessment_record_id": rows + 1,
-                        "source_id": source["source_id"],
-                        "source_row_number": source_row,
-                        "account_id": linked_account,
-                        "ssl_raw": (row.get("SSL") or "").strip(),
-                        "ssl_normalized": normalized_ssl,
-                        "source_internalid": (row.get("INTERNALID") or "").strip(),
-                        "source_objectid": (row.get("OBJECTID") or row.get("ObjectId") or "").strip(),
-                        "source_globalid": (row.get("GlobalID") or row.get("GLOBALID") or "").strip(),
-                        "record_extract_at": iso_date(row.get("EXTRACTDAT")),
-                        "archive_capture_at": source["archive_capture_at"] or "",
-                        "dataset_retrieved_at": source["retrieved_at"] or "",
-                    }
-                    for stage, value_fields in ASSESSMENT_FIELDS.items():
-                        out[f"{stage}_tax_year"] = source["years"][stage]
-                        out[f"{stage}_land_value"] = whole_dollars(row.get(value_fields[0]))
-                        out[f"{stage}_improvement_value"] = whole_dollars(row.get(value_fields[1]))
-                        out[f"{stage}_total_value"] = whole_dollars(row.get(value_fields[2]))
-                    writer.writerow(out)
-                    rows += 1
-    return artifact(output, rows)
-
-
 def build_tax_arrays() -> dict[str, object]:
-    source = SOURCES[-1]
+    source = ITSPE_SOURCE
     path = Path(source["path"])
     output = GENERATED / "tax_series.csv.gz"
     fields = [
@@ -455,7 +359,7 @@ def build_tax_arrays() -> dict[str, object]:
 
 def build_sale_series() -> dict[str, object]:
     current_account_by_ssl: dict[str, int] = {}
-    with Path(SOURCES[-1]["path"]).open(
+    with Path(ITSPE_SOURCE["path"]).open(
         "r", encoding="utf-8-sig", errors="replace", newline=""
     ) as current_handle:
         for source_row, row in enumerate(csv.DictReader(current_handle), start=2):
@@ -534,16 +438,20 @@ def artifact(path: Path, rows: int) -> dict[str, object]:
     }
 
 
+ARTIFACT_BUILDERS = {
+    "property_account_current": build_current,
+    "tax_series": build_tax_arrays,
+    "sale_series": build_sale_series,
+}
+
+
 def main() -> None:
     for directory in (GENERATED, MANIFEST_DIR, REPORT_DIR):
         directory.mkdir(parents=True, exist_ok=True)
-    profiles = [source_profile(source) for source in SOURCES]
-    profiles.append(cama_source_profile())
+    profiles = [source_profile(ITSPE_SOURCE), cama_source_profile()]
     artifacts = {
-        "property_account_current": build_current(),
-        "assessment_snapshot_record": build_assessments(),
-        "tax_series": build_tax_arrays(),
-        "sale_series": build_sale_series(),
+        artifact_name: builder()
+        for artifact_name, builder in ARTIFACT_BUILDERS.items()
     }
     manifest = {
         "created_at": datetime.now(timezone.utc).isoformat(),

@@ -1,0 +1,17 @@
+export const REGULATORY_PURGE_VACUUM_TABLES = Object.freeze([
+  "meta.source_record_link",
+  "regulatory.record",
+  "regulatory.building_permit",
+  "regulatory.business_license",
+  "regulatory.certificate_of_occupancy",
+  "regulatory.inspection",
+  "regulatory.enforcement_action",
+  "property_context.cama_building_profile",
+  "property_context.energy_benchmark",
+  "property_context.energy_benchmark_property_link",
+  "property_context.beps_compliance",
+  "property_context.beps_property_link",
+  "property_context.vacant_blighted_status",
+  "property_context.land_designation",
+  "property_context.land_designation_property_link",
+]);

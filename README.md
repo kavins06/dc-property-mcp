@@ -5,14 +5,16 @@ Read-only, lender-oriented Washington, D.C. property-account data service.
 The project builds:
 
 1. Compact PostgreSQL serving tables and a semantic catalog.
-2. Deterministic ETL from the canonical ITSPE files and the official D.C.
-   Tax System Property Sales (CAMA) export.
+2. Deterministic ETL from the current canonical ITSPE file and the official D.C.
+   Tax System Property Sales (CAMA) export, plus a release-pinned normalization
+   pipeline for 38 official regulatory and building-data sources.
 3. Fact-level provenance and human-facing portal verification routes with
    exact address, SSL, or instrument lookup instructions.
 4. A curated Cloudflare-hosted MCP server protected by WorkOS AuthKit.
 
 The canonical CSV files remain in the parent workspace and are never modified.
-Generated load files belong in `data/generated/` and are excluded from Git.
+Generated load files belong in `data/generated/` or
+`data/regulatory/generated/` and are excluded from Git.
 
 ## Hosted service
 
@@ -27,21 +29,35 @@ rate-limit bindings, and WorkOS AuthKit OAuth. The WorkOS production
 environment allows public email/password sign-up and supports both Client ID
 Metadata Document and Dynamic Client Registration.
 
-The Supabase database currently contains:
+The isolated PostgreSQL 18 production cluster on the shared Hetzner VM
+currently contains:
 
 - 221,263 current D.C. property-tax accounts
-- 652,131 assessment snapshot records
+- 2025 prior, 2026 current, and 2027 proposed assessment values on each
+  current property-account record
 - 221,263 compact, lossless tax series
 - 215,408 accounts with official sale history
 - 421,436 linked CAMA sale records; 9 source records are retained as unlinked
   diagnostics
-- approximately 467.7 million total PostgreSQL bytes after indexes
+- a 38-source official regulatory release with 3,623,995 source rows,
+  2,600,666 served records, and 5,862,456 property-account links
 
-The MCP exposes ten read-only tools for exact-first single and batch identity
-resolution, lender-oriented property snapshots, assessment history, compact
-tax/balance history, ownership, full linked CAMA sale history with the latest
-assessor deed, validated lender screening, official source evidence, and
-question-routed semantic guidance.
+The MCP exposes 14 read-only tools:
+
+- identity and discovery: `resolve_property`, `resolve_properties_batch`, and
+  `search_properties`
+- account facts: `get_property_snapshot`, `get_assessment_history`,
+  `get_tax_and_balance_history`, `get_ownership_and_sale`, and
+  `get_latest_sale_and_deed`
+- regulatory facts: `get_permit_history`, `get_license_history`,
+  `get_inspection_and_enforcement_history`, and
+  `get_building_and_land_profile`
+- evidence and semantic guidance: `get_source_evidence` and `describe_data`
+
+The four regulatory tools preserve the publishing agency, record type, and
+property-link scope. Only SSL-derived links are exact property facts.
+Shared-building, multi-parcel, and proximity matches are explicitly contextual
+and are not silently promoted to parcel facts.
 
 The screening surface supports validated tax class, balance, tax-sale,
 sale-date, valuation, use, type, and ward filters; deterministic sorts;
@@ -70,6 +86,24 @@ node --env-file=.env.hosted scripts/check-resolve-performance.mjs
 node --env-file=.env.hosted scripts/verify-runtime.mjs
 ```
 
+The regulatory loader requires one approved, normalized run directory under
+`data/regulatory/generated/`, the exact manifest SHA-256, and a live database
+whose core account mapping matches the manifest. Run its live-bound,
+non-writing preflight before the load:
+
+```powershell
+$env:PYTHONPATH="etl\src"
+python -m dc_property_etl.regulatory_verify data\regulatory\generated\<run>
+cd loader
+node load-regulatory.mjs ..\data\regulatory\generated\<run> --manifest-sha256 <sha256> --preflight-only
+node load-regulatory.mjs ..\data\regulatory\generated\<run> --manifest-sha256 <sha256>
+```
+
+The capacity-bounded loader is for an empty blue-green target. It creates a
+hidden batch, checkpoints resumable phases, runs publication gates, and changes
+current-release pointers only after every gate passes. It refuses an in-place
+double snapshot when current regulatory pointers already exist.
+
 Worker validation and deployment:
 
 ```powershell
@@ -78,25 +112,43 @@ npm run check
 npm test
 npm run bundle
 npm audit --audit-level=moderate
-node --env-file=..\.env.hosted ..\scripts\deploy-cloudflare.mjs
-node ..\scripts\verify-live.mjs 0.3.0
+node --env-file=..\.env.hosted ..\scripts\deploy-cloudflare.mjs --stage-only
+$env:CLOUDFLARE_WORKER_VERSION_ID="<candidate-version-id>"
+node ..\scripts\verify-authenticated-mcp.mjs
+node --env-file=..\.env.hosted ..\scripts\promote-cloudflare.mjs
+node ..\scripts\verify-live.mjs 0.4.0
 node ..\scripts\verify-authenticated-mcp.mjs
 ```
 
 The deployment helper uploads an immutable Worker version, attaches it at zero
-traffic, smoke-tests that exact version through Cloudflare's version-override
-header, then promotes it to 100%. A failed smoke test automatically restores
-the previous version.
+traffic, and smoke-tests that exact version through Cloudflare's
+version-override header. The candidate version ID is supplied to the attended
+OAuth verifier so all 14 tools run against the exact zero-traffic version.
+`promote-cloudflare.mjs` refuses stale candidate reports and automatically
+restores the previous version if post-promotion checks fail.
 
 `verify-authenticated-mcp.mjs` is an attended gate: it dynamically registers a
 temporary OAuth client, prints the WorkOS authorization URL, receives the
-localhost callback, discovers all ten tools, and calls every tool without
+localhost callback, discovers all 14 tools, and calls every tool without
 persisting tokens. WorkOS may require a human-verification challenge.
 
-The loader streams gzip CSVs without expanding them on disk, builds the
-historical-account link audit, validates exact row counts, and enforces the
-480 MB database no-go gate. Runtime traffic uses only the least-privileged
-`mcp_runtime` role through Hyperdrive; it cannot read serving tables directly.
+PostgreSQL is not designed around a provider plan ceiling. On the shared
+197 GB Hetzner Volume, loaders warn at 25 GB and block publication at 40 GB.
+Raw acquisitions, manifests, normalized release artifacts, verification
+reports, and application backups are retained in the private `quoindata`
+Hetzner S3-compatible bucket; PostgreSQL is a serving database, not the sole
+archive.
+
+Application backups use format v3 and cover `meta`, `core`, `history`,
+`semantic`, `regulatory`, and `property_context`. A verified backup is not a
+restore proof: every material release must also restore into an isolated empty
+PostgreSQL target and pass the database contracts and runtime probes.
+
+Runtime traffic uses only the least-privileged `mcp_runtime` role through
+Hyperdrive, a Workers VPC service, and an outbound Cloudflare Tunnel. The
+database listens only on loopback and the runtime role cannot read serving
+tables directly. Encrypted pgBackRest full/differential backups and WAL
+archiving provide recurring physical/PITR coverage in Hetzner Object Storage.
 
 Operational thresholds, incident steps, and rollback procedures are in
 `docs/operations-runbook.md`.

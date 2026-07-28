@@ -1,0 +1,17 @@
+[Unit]
+Description=D.C. Property PostgreSQL full backup
+After=postgresql@18-dcproperty.service network-online.target
+Wants=network-online.target
+OnFailure=dc-property-backup-failure@%n.service
+
+[Service]
+Type=oneshot
+User=postgres
+Group=postgres
+ExecStart=/usr/bin/pgbackrest --config=/etc/dc-property-mcp/pgbackrest.conf --stanza=dc-property --type=full backup
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=12h
+NoNewPrivileges=true
+PrivateTmp=true

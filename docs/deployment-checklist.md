@@ -1,91 +1,156 @@
 # Hosted deployment checklist
 
-No provider secret belongs in Git, chat, logs, manifests, or generated evidence.
-Use provider secret stores and rotate any credential that is accidentally
-exposed.
+No provider secret belongs in Git, chat, logs, manifests, object names, backup
+artifacts, or generated evidence. Use ignored environment files and provider
+secret stores, and rotate any credential that is exposed.
 
-## Supabase
+## PostgreSQL target
 
-Required from the project owner:
+- PostgreSQL 18 cluster: `18/dcproperty`
+- Host: shared Hetzner VM `ubuntu-4gb-ash-1`
+- Port: `5434`, loopback only
+- Data directory: `/mnt/HC_Volume_106250480/dc-property/pgdata`
+- Database: `dc_property`
+- Runtime role: `mcp_runtime`
+- TLS name: `db-origin.quoindata.com`, certificate verification `verify_full`
 
-- One empty Supabase project in the desired region.
-- The direct administrative PostgreSQL connection string for the one-time
-  migration/load. The direct endpoint may require an IPv6-capable x64 runner.
-- A newly generated password for the `mcp_runtime` role. This is distinct from
-  the administrative password and is used only by Cloudflare Hyperdrive.
+Verify that existing ports 5432 and 5433 and the existing Quoin applications
+remain unchanged. Confirm `mcp_runtime` cannot select from `meta`, `core`,
+`history`, `semantic`, `regulatory`, or `property_context`, and can execute
+only the 14 public `api_v1` functions.
 
-Run the ETL loader, record `pg_database_size`, warn at 470 MB, and stop if it
-exceeds 480 MB. Verify that `mcp_runtime`
-cannot select from `core`, `history`, `meta`, or `semantic`, and can execute
-only the ten public `api_v1` functions.
+The database is not constrained by a provider plan ceiling. The 197 GB shared
+Volume has a 25 GB review warning and a 40 GB hard publication gate.
 
-The immutable assessment history deliberately uses an account lookup index and
-a partial diagnostic unique index instead of a full-table primary-key index.
-The resulting no-primary-key and static-foreign-key performance notices are
-documented storage waivers, not security waivers. The security advisor must
-still be completely clear.
+## Regulatory release
 
-## Cloudflare
+The approved v0.4.0 release contains 38 official sources, 3,623,995 input rows,
+2,600,666 served records, and 5,862,456 property-account links.
 
-Required from the project owner:
+Before loading:
 
-- Account ID and an API token scoped to create/update one Worker, one
-  Hyperdrive configuration, the selected route/custom domain, observability,
-  and rate-limit bindings.
-- The final public MCP URL: `https://dc-property-mcp.quoindata.com/mcp`.
+1. Independently verify all compressed artifacts and canonical-row hashes.
+2. Record and require the exact `manifest.json` SHA-256.
+3. Run `load-regulatory.mjs --preflight-only` against the live core binding.
+4. Confirm the target has no current regulatory pointers.
+5. Verify the raw-source archive receipt in Hetzner Object Storage.
 
-The deployed Worker uses Hyperdrive with the **Supabase direct** connection string for
-`mcp_runtime`; do not point Hyperdrive at Supavisor. Put the returned
-configuration ID in `wrangler.jsonc`. Configure general and tighter
-`search_properties` and `resolve_properties_batch` rate limiters.
+The loader uses a hidden, checkpointed batch and changes current pointers only
+after every publication gate passes. A failed unpublished batch may be purged
+only after resolving and reviewing its exact batch ID:
+
+```powershell
+cd loader
+node purge-regulatory-batch.mjs <batch_id> --confirm
+```
+
+## Hetzner Object Storage
+
+Use the private `quoindata` bucket at
+`https://fsn1.your-objectstorage.com`. Archive only reviewed,
+project-relative inputs:
+
+```powershell
+node --env-file=.env.hosted scripts\archive-to-s3.mjs `
+  --prefix releases/v0.4.0/<archive-name> `
+  --input <project-relative-file-or-directory>
+```
+
+The helper content-addresses files, splits files over 250 MiB, downloads every
+uploaded part, and compares bytes and SHA-256 before writing a deterministic
+receipt. Preserve the receipt as release evidence.
+
+## Backup and recovery
+
+Create and verify application backup format v3:
+
+```powershell
+node --env-file=.env.hosted scripts\backup-application.mjs --output-dir <directory>
+node scripts\verify-application-backup.mjs <backup-directory>
+```
+
+Restore the verified backup into an isolated empty database with
+`restore-application.mjs`, reconcile every table and sequence, and run database
+and runtime probes. Verification alone is not restore proof.
+
+Production also requires:
+
+- encrypted pgBackRest full backup every Monday;
+- differential backups Tuesday through Sunday;
+- continuous WAL archiving with a five-minute archive timeout;
+- monthly verified application backup and S3 round-trip check; and
+- enabled systemd failure recording for all backup units.
+
+## Cloudflare private database path
+
+The required path is:
+
+```text
+Hyperdrive -> Workers VPC service -> Cloudflare Tunnel -> 127.0.0.1:5434
+```
+
+Do not create a public PostgreSQL listener or public DNS origin. The tunnel is
+outbound, the VPC service uses TCP/PostgreSQL with `verify_full`, and
+Hyperdrive connects as `mcp_runtime` with a bounded origin-connection limit.
+Retain the previous Supabase Hyperdrive ID as the rollback target.
 
 ## WorkOS
 
-Required from the project owner:
+- AuthKit domain: `ripe-theater-06.authkit.app`
+- Resource indicator: `https://dc-property-mcp.quoindata.com/mcp`
+- CIMD enabled; DCR retained for compatible clients
 
-- AuthKit production domain: `ripe-theater-06.authkit.app`.
-- Confirmation that public sign-up and email verification are enabled.
-- The final MCP URL registered as a Resource Indicator.
+The Worker validates issuer, JWKS signature, expiration, and exact audience.
+The attended verifier stores OAuth state and tokens only in memory.
 
-In WorkOS Connect configuration, enable Client ID Metadata Document (CIMD).
-Enable Dynamic Client Registration as a compatibility option for clients that
-have not adopted CIMD. The Worker validates the AuthKit issuer, JWKS signature,
-and exact resource audience; it never accepts an unverified token.
+## Staged release
+
+```powershell
+cd worker
+npm run check
+npm test
+npm run bundle
+npm audit --audit-level=moderate
+cd ..
+
+node scripts\deploy-cloudflare.mjs --stage-only
+$env:CLOUDFLARE_WORKER_VERSION_ID="<candidate-version-id>"
+node scripts\verify-authenticated-mcp.mjs
+node scripts\promote-cloudflare.mjs
+node scripts\verify-live.mjs 0.4.0
+node scripts\verify-authenticated-mcp.mjs
+```
+
+The candidate remains at 0% traffic until it passes health, headers, OAuth
+metadata, origin boundary, catalog, and all 14 authenticated tool calls. The
+promotion helper refuses a stale candidate pair and automatically restores the
+previous Worker version if post-promotion verification fails.
 
 ## Release gates
 
-- Migrations apply and all five exact row-count gates pass.
-- PostgreSQL total size is within the storage gate.
-- Runtime table reads fail; allowlisted function calls succeed.
-- MyTax, CAMA, and Recorder evidence examples open durable human-facing
-  official portals with exact lookup inputs and no machine/session URLs.
-- WorkOS sign-up, email verification, consent, token refresh, and logout pass.
-- ChatGPT and Claude can discover OAuth metadata and call all ten tools.
-- Ambiguous address requests return candidates without collateral facts.
-- Exact addresses resolve before fuzzy search; fuzzy-only responses are scored
-  and labeled `no_exact_match`.
-- Batch resolution preserves input order for 1–50 caller-named assets.
-- Malformed filters cannot create arbitrary SQL or unbounded exports.
-- Invalid wards, unknown filter values, and inverted ranges return
-  `invalid_input`, not a false zero-match answer.
-- The 1801 K Street mailing-jurisdiction conflict remains visible and carries a
-  quality flag.
-- Tax history uses `total_liabilities_reported_cents`, compact shared
-  provenance, and slot-qualified refs.
-- Logs contain no access tokens, database URLs, owner/mailing payloads, or
-  source-session URLs.
-- Worker type-checks and all unit tests pass; both npm trees have zero known
-  vulnerabilities.
-- The exact uploaded Worker version passes health, security-header, OAuth,
-  origin, and unauthenticated-boundary smoke tests before it receives traffic.
-- The previous Worker version ID is recorded and automatic rollback is armed.
+- All local tests, type checks, artifact validators, and dependency audits pass.
+- Core, regulatory, context, and link counts match the approved manifests.
+- Direct runtime, privilege, typed-projection, lifecycle, reviewer, and latency
+  gates pass on Hetzner.
+- Exact regulatory facts are SSL-derived at confidence `1.0000`; all other
+  link scopes remain explicitly contextual.
+- Raw and normalized archives, application backup, pgBackRest repository, and
+  isolated restore proof are independently verified.
+- Existing VM applications remain healthy and memory/disk measurements do not
+  justify a RAM upgrade.
+- The exact zero-traffic Worker candidate passes attended OAuth and all 14 MCP
+  tools before promotion.
+- Previous Worker and Supabase Hyperdrive identifiers are recorded.
+- Git contains no credentials, private keys, dumps, generated source data, or
+  secret-bearing reports.
+- The reviewed commit and `v0.4.0` tag are pushed and final production health
+  is rechecked.
 
-## Official implementation references
+## Official references
 
-- WorkOS: https://workos.com/docs/authkit/mcp
-- Cloudflare Hyperdrive with Supabase:
-  https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/postgres-database-providers/supabase/
-- Cloudflare remote MCP:
-  https://developers.cloudflare.com/agents/model-context-protocol/guides/remote-mcp-server/
-- Supabase PostgreSQL connections:
-  https://supabase.com/docs/guides/database/connecting-to-postgres
+- Cloudflare private database/VPC:
+  https://developers.cloudflare.com/hyperdrive/configuration/connect-to-private-database-vpc/
+- Cloudflare Tunnel private database:
+  https://developers.cloudflare.com/hyperdrive/configuration/connect-to-private-database/
+- WorkOS AuthKit MCP:
+  https://workos.com/docs/authkit/mcp

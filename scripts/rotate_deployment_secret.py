@@ -27,7 +27,13 @@ def strong_password(length: int = 48) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("name", choices=["SUPABASE_DB_PASSWORD", "DC_PROPERTY_RUNTIME_PASSWORD"])
+    parser.add_argument(
+        "name",
+        choices=[
+            "DATABASE_ADMIN_PASSWORD",
+            "DC_PROPERTY_RUNTIME_PASSWORD",
+        ],
+    )
     args = parser.parse_args()
 
     lines = OUTPUT.read_text(encoding="utf-8").splitlines()

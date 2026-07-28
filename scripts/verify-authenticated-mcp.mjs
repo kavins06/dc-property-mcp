@@ -1,4 +1,6 @@
 import { createServer } from "node:http";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { Client } from "../worker/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js";
 import { StreamableHTTPClientTransport } from "../worker/node_modules/@modelcontextprotocol/sdk/dist/esm/client/streamableHttp.js";
 import { UnauthorizedError } from "../worker/node_modules/@modelcontextprotocol/sdk/dist/esm/client/auth.js";
@@ -7,8 +9,68 @@ import { InMemoryOAuthClientProvider } from "../worker/node_modules/@modelcontex
 const serverUrl = new URL(
   process.argv[2] ?? "https://dc-property-mcp.quoindata.com/mcp",
 );
+const project = resolve(import.meta.dirname, "..");
 const callbackPort = Number(process.env.MCP_OAUTH_CALLBACK_PORT ?? 8765);
+const callbackTimeoutSeconds = Number(
+  process.env.MCP_OAUTH_CALLBACK_TIMEOUT_SECONDS ?? 600,
+);
+if (
+  !Number.isSafeInteger(callbackTimeoutSeconds) ||
+  callbackTimeoutSeconds < 60 ||
+  callbackTimeoutSeconds > 1800
+) {
+  throw new Error(
+    "MCP_OAUTH_CALLBACK_TIMEOUT_SECONDS must be an integer from 60 to 1800.",
+  );
+}
 const callbackUrl = `http://localhost:${callbackPort}/callback`;
+const workerVersionId =
+  process.env.CLOUDFLARE_WORKER_VERSION_ID?.trim() || undefined;
+const workerScriptName =
+  process.env.CLOUDFLARE_WORKER_SCRIPT_NAME?.trim() || "dc-property-mcp";
+
+async function candidateAwareFetch(input, init = {}) {
+  const requestUrl = new URL(
+    input instanceof Request ? input.url : input.toString(),
+  );
+  let response;
+  if (!workerVersionId || requestUrl.origin !== serverUrl.origin) {
+    response = await fetch(input, init);
+  } else {
+    const headers = new Headers(
+      input instanceof Request ? input.headers : undefined,
+    );
+    new Headers(init.headers).forEach((value, name) => {
+      headers.set(name, value);
+    });
+    headers.set(
+      "Cloudflare-Workers-Version-Overrides",
+      `${workerScriptName}="${workerVersionId}"`,
+    );
+    response = await fetch(input, { ...init, headers });
+  }
+  if (!response.ok) {
+    const details = await response
+      .clone()
+      .json()
+      .catch(() => ({}));
+    process.stderr.write(
+      `${JSON.stringify({
+        event: "oauth_http_error",
+        origin: requestUrl.origin,
+        path: requestUrl.pathname,
+        status: response.status,
+        error:
+          typeof details.error === "string" ? details.error : undefined,
+        error_description:
+          typeof details.error_description === "string"
+            ? details.error_description
+            : undefined,
+      })}\n`,
+    );
+  }
+  return response;
+}
 
 let settleCallback;
 const callbackPromise = new Promise((resolve, reject) => {
@@ -54,7 +116,10 @@ const callbackServer = createServer((request, response) => {
 
 await new Promise((resolve, reject) => {
   callbackServer.once("error", reject);
-  callbackServer.listen(callbackPort, "127.0.0.1", resolve);
+  callbackServer.listen(
+    { port: callbackPort, host: "::", ipv6Only: false },
+    resolve,
+  );
 });
 
 let authorizationUrl;
@@ -76,13 +141,14 @@ const provider = new InMemoryOAuthClientProvider(
   },
 );
 const client = new Client(
-  { name: "quoin-release-verifier", version: "0.3.0" },
+  { name: "quoin-release-verifier", version: "0.4.0" },
   { capabilities: {} },
 );
 
 async function connect() {
   const transport = new StreamableHTTPClientTransport(serverUrl, {
     authProvider: provider,
+    fetch: candidateAwareFetch,
   });
   try {
     await client.connect(transport);
@@ -90,15 +156,21 @@ async function connect() {
   } catch (error) {
     if (!(error instanceof UnauthorizedError)) throw error;
     await authorizationUrlPromise;
+    let callbackTimeout;
     const code = await Promise.race([
       callbackPromise,
       new Promise((_, reject) => {
-        setTimeout(
-          () => reject(new Error("OAuth callback timed out after 180 seconds.")),
-          180_000,
+        callbackTimeout = setTimeout(
+          () =>
+            reject(
+              new Error(
+                `OAuth callback timed out after ${callbackTimeoutSeconds} seconds.`,
+              ),
+            ),
+          callbackTimeoutSeconds * 1000,
         );
       }),
-    ]);
+    ]).finally(() => clearTimeout(callbackTimeout));
     await transport.finishAuth(code);
     return connect();
   }
@@ -118,10 +190,20 @@ const expectedTools = [
   "get_tax_and_balance_history",
   "get_ownership_and_sale",
   "get_latest_sale_and_deed",
+  "get_permit_history",
+  "get_license_history",
+  "get_inspection_and_enforcement_history",
+  "get_building_and_land_profile",
   "search_properties",
   "get_source_evidence",
   "describe_data",
 ];
+const regulatoryTools = new Set([
+  "get_permit_history",
+  "get_license_history",
+  "get_inspection_and_enforcement_history",
+  "get_building_and_land_profile",
+]);
 const probes = [
   ["resolve_property", { ssl: "01070075" }],
   [
@@ -138,6 +220,13 @@ const probes = [
   ["get_tax_and_balance_history", { ssl: "01070075" }],
   ["get_ownership_and_sale", { ssl: "01070075" }],
   ["get_latest_sale_and_deed", { ssl: "01070075" }],
+  ["get_permit_history", { ssl: "01070075", limit: 1 }],
+  ["get_license_history", { ssl: "01070075", limit: 1 }],
+  [
+    "get_inspection_and_enforcement_history",
+    { ssl: "01070075", limit: 1 },
+  ],
+  ["get_building_and_land_profile", { ssl: "01070075", limit: 1 }],
   [
     "search_properties",
     {
@@ -177,6 +266,14 @@ try {
     if (!["resolved", "ok"].includes(payload.status)) {
       throw new Error(`${name} returned unexpected status ${payload.status}`);
     }
+    if (
+      regulatoryTools.has(name) &&
+      (!Array.isArray(payload.records) || payload.property === undefined)
+    ) {
+      throw new Error(
+        `${name} did not return the v0.4 regulatory response contract.`,
+      );
+    }
     if (name === "get_latest_sale_and_deed") {
       saleSourceRef =
         payload.sale_history?.[0]?.sale_price_dollars?.source_refs?.[0];
@@ -206,15 +303,28 @@ try {
     throw new Error("Live sale evidence is not a human D.C. portal route.");
   }
 
-  process.stdout.write(`${JSON.stringify({
+  const verification = {
     passed: true,
+    service_version: "0.4.0",
     endpoint: serverUrl.toString(),
+    worker_version_override: workerVersionId ?? null,
     tool_count: toolNames.length,
     tools: toolNames,
     statuses,
     timings_ms: timings,
     sale_evidence_portal: portal,
-  }, null, 2)}\n`);
+    verified_at: new Date().toISOString(),
+  };
+  const reportDirectory = resolve(project, "db", "reports", "generated");
+  mkdirSync(reportDirectory, { recursive: true });
+  writeFileSync(
+    resolve(
+      reportDirectory,
+      `authenticated-mcp-${workerVersionId ? "candidate" : "production"}-0.4.0.json`,
+    ),
+    `${JSON.stringify(verification, null, 2)}\n`,
+  );
+  process.stdout.write(`${JSON.stringify(verification, null, 2)}\n`);
 } finally {
   callbackServer.close();
   if (transport) await transport.close().catch(() => undefined);

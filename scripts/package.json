@@ -1,0 +1,15 @@
+{
+  "name": "dc-property-production-scripts",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1096.0"
+  }
+}

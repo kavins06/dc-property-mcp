@@ -1,13 +1,30 @@
 import { readFileSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import pg from "../loader/node_modules/pg/lib/index.js";
+import { adminDatabaseConfig } from "./lib/hosted-db.mjs";
 
 const project = resolve(import.meta.dirname, "..");
 const migrationRoot = resolve(project, "db", "migrations");
-const requested = process.argv.slice(2);
+const testRoot = resolve(project, "db", "tests");
+const argumentsList = process.argv.slice(2);
+const testFlagIndex = argumentsList.indexOf("--test");
+const requested =
+  testFlagIndex < 0
+    ? argumentsList
+    : argumentsList.slice(0, testFlagIndex);
+const requestedTest =
+  testFlagIndex < 0 ? null : argumentsList[testFlagIndex + 1];
 
 if (requested.length === 0) {
   throw new Error("Pass one or more migration paths under db/migrations/.");
+}
+if (
+  testFlagIndex >= 0 &&
+  (!requestedTest || testFlagIndex + 2 !== argumentsList.length)
+) {
+  throw new Error(
+    "Pass exactly one SQL contract after --test.",
+  );
 }
 
 function readEnv(path) {
@@ -23,13 +40,7 @@ function readEnv(path) {
 }
 
 const env = readEnv(resolve(project, ".env.hosted"));
-const password =
-  process.env.SUPABASE_DB_PASSWORD ?? env.SUPABASE_DB_PASSWORD;
-const projectRef =
-  process.env.SUPABASE_PROJECT_REF ?? env.SUPABASE_PROJECT_REF;
-if (!password || !projectRef) {
-  throw new Error("Supabase migration-validation credentials are unavailable.");
-}
+const databaseEnvironment = { ...env, ...process.env };
 
 const migrations = requested.map((requestedPath) => {
   const path = resolve(project, requestedPath);
@@ -48,11 +59,30 @@ const migrations = requested.map((requestedPath) => {
   return { requestedPath, sql };
 });
 
+let contract = null;
+if (requestedTest) {
+  const path = resolve(project, requestedTest);
+  const candidate = relative(testRoot, path);
+  if (
+    !candidate ||
+    candidate.startsWith("..") ||
+    isAbsolute(candidate) ||
+    !candidate.toLowerCase().endsWith(".sql")
+  ) {
+    throw new Error(
+      `Contract path is outside db/tests/: ${requestedTest}`,
+    );
+  }
+  contract = {
+    requestedPath: requestedTest,
+    sql: readFileSync(path, "utf8")
+      .replace(/^\s*begin;\s*/i, "")
+      .replace(/\s*rollback;\s*$/i, ""),
+  };
+}
+
 const client = new pg.Client({
-  connectionString:
-    `postgresql://postgres:${encodeURIComponent(password)}` +
-    `@db.${projectRef}.supabase.co:5432/postgres`,
-  ssl: { rejectUnauthorized: false },
+  ...adminDatabaseConfig(databaseEnvironment),
   statement_timeout: 0,
   application_name: "dc-property-migration-validator",
 });
@@ -64,6 +94,11 @@ try {
     await client.query(migration.sql);
     await client.query("reset role");
     process.stdout.write(`Validated ${migration.requestedPath}\n`);
+  }
+  if (contract) {
+    await client.query(contract.sql);
+    await client.query("reset role");
+    process.stdout.write(`Passed ${contract.requestedPath}\n`);
   }
   await client.query("rollback");
   process.stdout.write("Validation transaction rolled back.\n");

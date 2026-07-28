@@ -108,24 +108,49 @@ export async function boundedMcpRequest(
   return new Request(request, { body });
 }
 
-async function isHighCostRequest(request: Request): Promise<boolean> {
-  if (request.method !== "POST") return false;
+const HIGH_COST_TOOLS = new Set([
+  "search_properties",
+  "resolve_properties_batch",
+  "get_permit_history",
+  "get_license_history",
+  "get_inspection_and_enforcement_history",
+  "get_building_and_land_profile",
+]);
+
+export async function highCostRequestCount(
+  request: Request,
+): Promise<number> {
+  if (request.method !== "POST") return 0;
   const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) return false;
+  if (!contentType.toLowerCase().includes("application/json")) return 0;
   try {
-    const body = await request.clone().json<{
-      method?: string;
-      params?: { name?: string };
-    }>();
-    return (
-      body.method === "tools/call" &&
-      ["search_properties", "resolve_properties_batch"].includes(
-        body.params?.name ?? "",
-      )
-    );
+    const body = await request.clone().json<
+      | {
+          method?: string;
+          params?: { name?: string };
+        }
+      | Array<{
+          method?: string;
+          params?: { name?: string };
+        }>
+    >();
+    const calls = Array.isArray(body) ? body : [body];
+    return calls.filter(
+      (call) =>
+        call &&
+        typeof call === "object" &&
+        call.method === "tools/call" &&
+        HIGH_COST_TOOLS.has(call.params?.name ?? ""),
+    ).length;
   } catch {
-    return false;
+    return 0;
   }
+}
+
+export async function isHighCostRequest(
+  request: Request,
+): Promise<boolean> {
+  return (await highCostRequestCount(request)) > 0;
 }
 
 async function authorizationMetadata(env: Env): Promise<Response> {
@@ -238,10 +263,15 @@ async function handleRequest(
     throw error;
   }
 
-  if (env.SEARCH_RATE_LIMITER && await isHighCostRequest(boundedRequest)) {
-    const { success } = await env.SEARCH_RATE_LIMITER.limit({ key });
-    if (!success) {
-      return jsonError("search_rate_limit_exceeded", 429, { "Retry-After": "60" });
+  if (env.SEARCH_RATE_LIMITER) {
+    const highCostCalls = await highCostRequestCount(boundedRequest);
+    for (let index = 0; index < highCostCalls; index += 1) {
+      const { success } = await env.SEARCH_RATE_LIMITER.limit({ key });
+      if (!success) {
+        return jsonError("search_rate_limit_exceeded", 429, {
+          "Retry-After": "60",
+        });
+      }
     }
   }
 

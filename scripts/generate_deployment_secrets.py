@@ -21,7 +21,7 @@ def main() -> None:
     OUTPUT.write_text(
         "\n".join(
             [
-                f"SUPABASE_DB_PASSWORD={strong_secret()}",
+                f"DATABASE_ADMIN_PASSWORD={strong_secret()}",
                 f"DC_PROPERTY_RUNTIME_PASSWORD={strong_secret()}",
                 "",
             ]

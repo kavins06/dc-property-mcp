@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.4.0 — 2026-07-28
+
+- Added four bounded regulatory tools for permits, licenses,
+  inspections/enforcement, and building/land profiles, bringing the public
+  read-only MCP catalog to 14 tools.
+- Normalized and release-pinned 38 official D.C. sources: 3,623,995 source
+  rows, 2,600,666 served records, and 5,862,456 property-account links.
+- Added exact-versus-contextual property-link semantics. Only SSL-derived
+  `exact_property` links are exact facts; shared-building, multi-parcel, and
+  proximity records remain labeled context.
+- Added tamper-evident six-part regulatory source references and official
+  human-portal evidence routes with release metadata and exact lookup inputs.
+- Added approved-manifest and core-artifact binding, an empty-target
+  blue-green loader, hidden checkpointed phases, safe identical-manifest
+  resume, guarded unpublished-batch purge, and publication pointers.
+- Defined the active assessment scope as TY2025 prior, TY2026 current, and
+  TY2027 proposed.
+- Added provider-neutral, content-addressed S3 archival tooling and
+  application backup format v3 for
+  `meta`, `core`, `history`, `semantic`, `regulatory`, and
+  `property_context`, with isolated restore proof required for release.
+- Migrated the production origin from Supabase to an isolated PostgreSQL 18
+  cluster on Hetzner through Hyperdrive, Workers VPC, and Cloudflare Tunnel.
+- Added encrypted pgBackRest physical backups, continuous WAL/PITR coverage,
+  and monthly verified application backups in Hetzner Object Storage.
+- Replaced provider-plan limits with a 25 GB shared-volume review threshold
+  and a 40 GB hard publication gate.
+
 ## 0.3.0 — 2026-07-27
 
 - Rebuilt address resolution around normalized exact matches, safe bounded

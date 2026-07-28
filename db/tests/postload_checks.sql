@@ -4,11 +4,10 @@ do $$
 declare
   v_payload jsonb;
   v_table_read_failed boolean := false;
+  v_database_size_bytes bigint;
 begin
   assert (select count(*) from core.property_account_current) = 221263,
     'current account row-count gate failed';
-  assert (select count(*) from history.assessment_snapshot_record) = 652131,
-    'assessment row-count gate failed';
   assert (select count(*) from history.tax_series) = 221263,
     'tax-series row-count gate failed';
   assert (select count(*) from history.sale_series) = 215408,
@@ -17,8 +16,14 @@ begin
     select sum(cardinality(source_objectids))
     from history.sale_series
   ) = 421436, 'sale-series source row-count gate failed';
-  assert pg_database_size(current_database()) <= 480000000,
-    'database exceeds 480 MB free-tier safety gate';
+  select pg_database_size(current_database()) into v_database_size_bytes;
+  if v_database_size_bytes >= 5000000000 then
+    raise warning
+      'database has reached the 5 GB warning threshold: % bytes',
+      v_database_size_bytes;
+  end if;
+  assert v_database_size_bytes < 6000000000,
+    'database has reached the 6 GB release limit';
 
   assert not exists (
     select 1 from core.property_account_current
@@ -46,19 +51,23 @@ begin
        or cardinality(source_objectids) <> cardinality(sale_codes)
        or cardinality(source_objectids) <> cardinality(current_owner_flags)
   ), 'sale-series vector cardinality gate failed';
-  assert not exists (
-    select assessment_record_id
-    from history.assessment_snapshot_record
-    group by assessment_record_id
-    having count(*) > 1
-  ), 'assessment record ID uniqueness gate failed';
+  assert to_regclass('history.assessment_snapshot_record') is null,
+    'standalone assessment history table still exists';
+  assert to_regclass('meta.snapshot_record_link') is null,
+    'legacy assessment link table still exists';
   assert not exists (
     select 1
-    from meta.snapshot_record_link l
-    left join history.assessment_snapshot_record h
-      on h.assessment_record_id = l.assessment_record_id
-    where h.assessment_record_id is null
-  ), 'assessment diagnostic-link integrity gate failed';
+    from core.property_account_current
+    where prior_land_value is null
+       or prior_improvement_value is null
+       or prior_total_value is null
+       or current_land_value is null
+       or current_improvement_value is null
+       or current_total_value is null
+       or proposed_land_value is null
+       or proposed_improvement_value is null
+       or proposed_total_value is null
+  ), 'current account assessment-stage completeness gate failed';
 
   assert (select count(*) from semantic.field_definition) >= 40,
     'semantic field catalog is unexpectedly incomplete';
@@ -67,15 +76,23 @@ begin
     from semantic.coverage
     where entity_name = 'assessment'
       and availability_status = 'available'
-  ) = 9,
+      and (tax_year, stage) in (
+        (2025, 'prior'),
+        (2026, 'current'),
+        (2027, 'proposed')
+      )
+  ) = 3,
     'assessment coverage catalog gate failed';
   assert (
     select count(*)
     from semantic.coverage
     where entity_name = 'assessment'
-      and availability_status = 'not_available'
-  ) = 3,
-    'assessment gap catalog gate failed';
+  ) = 3, 'assessment coverage contains obsolete entries';
+  assert not exists (
+    select 1
+    from meta.source_asset
+    where source_id in ('itspe_2017_archive', 'itspe_2021_archive')
+  ), 'legacy assessment source metadata remains active';
   assert (select count(*) from semantic.property_type_vocabulary) >= 10,
     'property-type screening vocabulary is unexpectedly incomplete';
   assert to_regclass('core.property_account_screen_type_tax_idx') is not null,
@@ -85,8 +102,6 @@ begin
 
   assert not has_table_privilege('mcp_runtime', 'core.property_account_current', 'select'),
     'runtime role unexpectedly has current-table SELECT';
-  assert not has_table_privilege('mcp_runtime', 'history.assessment_snapshot_record', 'select'),
-    'runtime role unexpectedly has history-table SELECT';
   assert has_function_privilege(
     'mcp_runtime', 'api_v1.get_property_snapshot(text,text)', 'execute'
   ), 'runtime role lacks expected API function EXECUTE';

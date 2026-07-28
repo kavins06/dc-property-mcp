@@ -9,6 +9,10 @@ const ALLOWED_FUNCTIONS = new Set([
   "get_tax_and_balance_history",
   "get_ownership_and_sale",
   "get_latest_sale_and_deed",
+  "get_permit_history",
+  "get_license_history",
+  "get_inspection_and_enforcement_history",
+  "get_building_and_land_profile",
   "search_properties",
   "get_source_evidence",
   "describe_data",
@@ -77,9 +81,9 @@ export async function callApi(
   const sql = `select api_v1.${functionName}(${placeholders}) as result`;
   const client = new Client({
     connectionString: env.HYPERDRIVE.connectionString,
-    // Supabase Free/nano can have occasional cold-start latency even when the
-    // indexed query itself is fast. Keep a firm ceiling without rejecting a
-    // valid first request during connection warm-up.
+    // The database tunnel and Hyperdrive can have occasional cold-start
+    // latency even when the indexed query itself is fast. Keep a firm ceiling
+    // without rejecting a valid first request during connection warm-up.
     statement_timeout: 8000,
     query_timeout: 9500,
   });

@@ -16,7 +16,7 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "a9ec4dc6114e4057a11bea66b8fe50b3",
+      "id": "5fd47b059f824188998ad4ce9dc4503c",
       "localConnectionString": "postgresql://mcp_runtime:local@127.0.0.1:5432/dc_property"
     }
   ],

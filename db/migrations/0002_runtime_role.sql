@@ -14,9 +14,22 @@ begin
 end
 $$;
 
-grant api_owner to postgres with set true, inherit false;
-grant data_owner to postgres with set true, inherit false;
-grant mcp_runtime to postgres with set true, inherit false;
+do $$
+begin
+  execute format(
+    'grant api_owner to %I with set true, inherit false',
+    current_user
+  );
+  execute format(
+    'grant data_owner to %I with set true, inherit false',
+    current_user
+  );
+  execute format(
+    'grant mcp_runtime to %I with set true, inherit false',
+    current_user
+  );
+end
+$$;
 
 alter role mcp_runtime set default_transaction_read_only = on;
 alter role mcp_runtime set statement_timeout = '3s';

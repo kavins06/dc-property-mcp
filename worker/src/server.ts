@@ -3,7 +3,8 @@ import { z } from "zod";
 import { callApi } from "./db";
 import type { Env } from "./types";
 
-export const SERVICE_VERSION = "0.3.0";
+export const SERVICE_VERSION = "0.4.0";
+export const MAX_TOOL_RESPONSE_BYTES = 768 * 1024;
 
 // McpServer output validation requires an object schema. A Zod record is not
 // normalized as an object by the SDK and fails successful tool calls.
@@ -15,6 +16,25 @@ const propertyInput = {
 
 function toolResult(result: Record<string, unknown>) {
   const text = JSON.stringify(result);
+  if (new TextEncoder().encode(text).byteLength > MAX_TOOL_RESPONSE_BYTES) {
+    const compactError = {
+      status: "error",
+      error: {
+        code: "response_too_large",
+        hint:
+          "Request a smaller page with limit, then continue with the returned cursor.",
+        retryable: false,
+      },
+      limits: {
+        max_response_bytes: MAX_TOOL_RESPONSE_BYTES,
+      },
+    };
+    const compactText = JSON.stringify(compactError);
+    return {
+      content: [{ type: "text" as const, text: compactText }],
+      structuredContent: compactError,
+    };
+  }
   return {
     content: [{ type: "text" as const, text }],
     structuredContent: result,
@@ -88,7 +108,11 @@ export function createServer(env: Env): McpServer {
       },
     },
     async ({ items }) =>
-      toolResult(await callApi(env, "resolve_properties_batch", [items])),
+      toolResult(
+        await callApi(env, "resolve_properties_batch", [
+          JSON.stringify(items),
+        ]),
+      ),
   );
 
   const propertyTools = [
@@ -101,7 +125,7 @@ export function createServer(env: Env): McpServer {
     {
       name: "get_assessment_history",
       description:
-        "Use for available prior/current/proposed assessment periods. Reports coverage gaps and historical identity conflicts explicitly.",
+        "Use for the current official assessment sequence: tax year 2025 prior, tax year 2026 current, and tax year 2027 proposed. These stages are distinct, and assessed value is not an appraisal or lending value.",
       db: "get_assessment_history",
     },
     {
@@ -143,6 +167,66 @@ export function createServer(env: Env): McpServer {
     );
   }
 
+  const regulatoryInput = {
+    ...propertyInput,
+    cursor: z.string().trim().min(1).max(512).optional(),
+    limit: z.number().int().min(1).max(50).default(20),
+  };
+  const regulatoryTools = [
+    {
+      name: "get_permit_history",
+      description:
+        "Use for official building permit history, certificate of occupancy records, and DDOT public-space permit records associated with a resolved property. Record types and property-link scope stay explicit.",
+      db: "get_permit_history",
+    },
+    {
+      name: "get_license_history",
+      description:
+        "Use for official business and occupational licenses associated with the reported premise. A premise match is context only; it is not proof of ownership or title.",
+      db: "get_license_history",
+    },
+    {
+      name: "get_inspection_and_enforcement_history",
+      description:
+        "Use for official inspection history and enforcement or violation context associated with a resolved property. Agency, record type, and property-link scope stay explicit.",
+      db: "get_inspection_and_enforcement_history",
+    },
+    {
+      name: "get_building_and_land_profile",
+      description:
+        "Use for official CAMA building characteristics, energy benchmarking, BEPS status, and vacant or blighted property context. Shared-building and proximity records are not exact parcel facts.",
+      db: "get_building_and_land_profile",
+    },
+  ] as const;
+
+  for (const tool of regulatoryTools) {
+    server.registerTool(
+      tool.name,
+      {
+        description: tool.description,
+        inputSchema: regulatoryInput,
+        outputSchema: resultSchema,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
+      async ({ ssl, address, cursor, limit }) =>
+        toolResult(
+          await callApi(env, tool.db, [
+            ssl ?? null,
+            address ?? null,
+            JSON.stringify({
+              limit,
+              ...(cursor === undefined ? {} : { cursor }),
+            }),
+          ]),
+        ),
+    );
+  }
+
   server.registerTool(
     "search_properties",
     {
@@ -178,7 +262,10 @@ export function createServer(env: Env): McpServer {
         openWorldHint: false,
       },
     },
-    async (input) => toolResult(await callApi(env, "search_properties", [input])),
+    async (input) =>
+      toolResult(
+        await callApi(env, "search_properties", [JSON.stringify(input)]),
+      ),
   );
 
   server.registerTool(

@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly D.C. Property PostgreSQL full backup timer
+
+[Timer]
+OnCalendar=Mon *-*-* 03:30:00 UTC
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target

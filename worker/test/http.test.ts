@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import worker, {
   allowedOrigin,
   boundedMcpRequest,
+  highCostRequestCount,
+  isHighCostRequest,
   PayloadTooLargeError,
 } from "../src/index";
 import type { Env } from "../src/types";
@@ -30,7 +32,7 @@ describe("HTTP boundary", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       service: "dc-property-mcp",
-      version: "0.3.0",
+      version: "0.4.0",
     });
     expect(response.headers.get("x-request-id")).toBeTruthy();
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
@@ -103,6 +105,57 @@ describe("HTTP boundary", () => {
     await expect(boundedMcpRequest(request)).rejects.toBeInstanceOf(
       PayloadTooLargeError,
     );
+  });
+
+  it("classifies every bounded regulatory history call as high cost", async () => {
+    for (const name of [
+      "get_permit_history",
+      "get_license_history",
+      "get_inspection_and_enforcement_history",
+      "get_building_and_land_profile",
+    ]) {
+      const request = new Request("https://mcp.example.com/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "tools/call",
+          params: { name, arguments: { ssl: "5576    0001" } },
+          id: 1,
+        }),
+      });
+
+      await expect(isHighCostRequest(request)).resolves.toBe(true);
+    }
+  });
+
+  it("counts every high-cost call in a JSON-RPC batch regardless of media-type casing", async () => {
+    const request = new Request("https://mcp.example.com/mcp", {
+      method: "POST",
+      headers: { "Content-Type": "Application/JSON; Charset=UTF-8" },
+      body: JSON.stringify([
+        {
+          jsonrpc: "2.0",
+          method: "tools/call",
+          params: { name: "get_permit_history", arguments: {} },
+          id: 1,
+        },
+        {
+          jsonrpc: "2.0",
+          method: "tools/call",
+          params: { name: "describe_data", arguments: {} },
+          id: 2,
+        },
+        {
+          jsonrpc: "2.0",
+          method: "tools/call",
+          params: { name: "search_properties", arguments: {} },
+          id: 3,
+        },
+      ]),
+    });
+
+    await expect(highCostRequestCount(request)).resolves.toBe(2);
   });
 
   it("converts unexpected upstream failures to a generic response", async () => {

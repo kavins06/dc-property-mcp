@@ -4,6 +4,12 @@ import { pipeline } from "node:stream/promises";
 import { createGunzip } from "node:zlib";
 import pg from "pg";
 import { from as copyFrom } from "pg-copy-streams";
+import { adminDatabaseConfig } from "../scripts/lib/hosted-db.mjs";
+import {
+  ACTIVE_LOADS,
+  EXPECTED_LINKED_SALE_ROWS,
+  databaseSizeLevel,
+} from "./pipeline-contract.mjs";
 
 const project = resolve(import.meta.dirname, "..");
 const migrations = resolve(project, "db", "migrations");
@@ -47,29 +53,28 @@ async function tableCount(client, table) {
 }
 
 const env = readEnv(resolve(project, ".env.hosted"));
-const projectRef = env.SUPABASE_PROJECT_REF;
-const adminPassword = process.env.SUPABASE_LOAD_PASSWORD ?? env.SUPABASE_DB_PASSWORD;
+const adminPassword =
+  process.env.DATABASE_LOAD_PASSWORD ?? env.DATABASE_ADMIN_PASSWORD;
 const runtimePassword = env.DC_PROPERTY_RUNTIME_PASSWORD;
-if (!projectRef || !adminPassword || !runtimePassword) {
-  throw new Error("Missing Supabase project or deployment password metadata.");
+if (!env.DATABASE_HOST || !adminPassword || !runtimePassword) {
+  throw new Error("Missing PostgreSQL host or deployment password metadata.");
 }
 
 const client = new pg.Client({
-  host: `db.${projectRef}.supabase.co`,
-  port: 5432,
-  database: "postgres",
-  user: "postgres",
-  password: adminPassword,
+  ...adminDatabaseConfig({
+    ...env,
+    ...process.env,
+    DATABASE_ADMIN_PASSWORD: adminPassword,
+  }),
   // Equivalent to PostgreSQL sslmode=require: encrypted transport for this
   // one-time loader. Hyperdrive manages the hosted runtime TLS connection.
-  ssl: { rejectUnauthorized: false },
   connectionTimeoutMillis: 30_000,
   statement_timeout: 0,
   application_name: "dc-property-bulk-loader",
 });
 
 try {
-  process.stdout.write("Connecting to Supabase direct PostgreSQL endpoint\n");
+  process.stdout.write("Connecting to the configured PostgreSQL endpoint\n");
   await client.connect();
   await client.query("set statement_timeout = 0");
 
@@ -88,21 +93,7 @@ try {
             'api_v1.resolve_property(text,text,boolean,integer)'
           )
         )
-      ) = 'api_owner' as runtime_role_applied,
-      exists (
-        select 1
-        from information_schema.columns
-        where table_schema = 'history'
-          and table_name = 'tax_series'
-          and column_name = 'values_cents'
-      ) as compact_tax_applied,
-      not exists (
-        select 1
-        from information_schema.columns
-        where table_schema = 'history'
-          and table_name = 'assessment_snapshot_record'
-          and column_name = 'source_objectid'
-      ) as compact_core_applied
+      ) = 'api_owner' as runtime_role_applied
   `);
 
   if (!state.rows[0].initial_applied) {
@@ -115,11 +106,12 @@ try {
   } else {
     process.stdout.write("Skipping db/migrations/0002_runtime_role.sql (already applied)\n");
   }
-  for (const [table, fileName, expectedRows] of [
-    ["core.property_account_current", "property_account_current.csv.gz", 221263],
-    ["history.assessment_snapshot_record", "assessment_snapshot_record.csv.gz", 652131],
-    ["history.tax_series", "tax_series.csv.gz", 221263],
-  ]) {
+  // Source metadata is referenced by every core/history artifact and must be
+  // present before the first COPY on a genuinely empty PostgreSQL cluster.
+  await applySql(client, "db/migrations/0004_semantic_seed.sql");
+  for (const { table, fileName, expectedRows } of ACTIVE_LOADS.filter(
+    ({ phase }) => phase === "initial",
+  )) {
     const existingRows = await tableCount(client, table);
     if (existingRows === 0) {
       await copyGzip(client, table, fileName);
@@ -132,12 +124,32 @@ try {
     }
   }
 
-  if (!state.rows[0].compact_tax_applied) {
+  // Re-read compaction state after an empty project has received 0001 and its
+  // initial artifacts. Checking before 0001 would mistake missing tables for
+  // already-compacted tables and skip the required transformations.
+  const compactState = await client.query(`
+    select
+      exists (
+        select 1
+        from information_schema.columns
+        where table_schema = 'history'
+          and table_name = 'tax_series'
+          and column_name = 'values_cents'
+      ) as compact_tax_applied,
+      not exists (
+        select 1
+        from information_schema.columns
+        where table_schema = 'core'
+          and table_name = 'property_account_current'
+          and column_name = 'raw_objectid'
+      ) as compact_core_applied
+  `);
+  if (!compactState.rows[0].compact_tax_applied) {
     await applySql(client, "db/migrations/0006_compact_tax.sql");
   } else {
     process.stdout.write("Skipping db/migrations/0006_compact_tax.sql (already applied)\n");
   }
-  if (!state.rows[0].compact_core_applied) {
+  if (!compactState.rows[0].compact_core_applied) {
     await applySql(client, "db/migrations/0007_compact_core_history.sql");
   } else {
     process.stdout.write(
@@ -145,7 +157,6 @@ try {
     );
   }
   await applySql(client, "db/migrations/0003_api_functions.sql");
-  await applySql(client, "db/migrations/0004_semantic_seed.sql");
   await applySql(client, "db/migrations/0005_postload.sql");
   for (const migration of [
     "db/migrations/0008_resolve_performance.sql",
@@ -160,21 +171,19 @@ try {
     client,
     "db/migrations/0013_sale_history_and_semantics.sql",
   );
-  const existingSaleRows = await tableCount(client, "history.sale_series");
+  const saleLoad = ACTIVE_LOADS.find(({ phase }) => phase === "sale");
+  if (!saleLoad) throw new Error("Missing sale-series load contract.");
+  const existingSaleRows = await tableCount(client, saleLoad.table);
   if (existingSaleRows === 0) {
-    await copyGzip(
-      client,
-      "history.sale_series",
-      "sale_series.csv.gz",
-    );
-  } else if (existingSaleRows === 215408) {
+    await copyGzip(client, saleLoad.table, saleLoad.fileName);
+  } else if (existingSaleRows === saleLoad.expectedRows) {
     process.stdout.write(
-      `Skipping sale_series.csv.gz (${existingSaleRows} rows already loaded)\n`,
+      `Skipping ${saleLoad.fileName} (${existingSaleRows} rows already loaded)\n`,
     );
   } else {
     throw new Error(
-      "history.sale_series contains " +
-        `${existingSaleRows} rows; expected 0 or 215408.`,
+      `${saleLoad.table} contains ${existingSaleRows} rows; ` +
+        `expected 0 or ${saleLoad.expectedRows}.`,
     );
   }
   for (const migration of [
@@ -184,6 +193,7 @@ try {
     "db/migrations/0017_free_tier_headroom.sql",
     "db/migrations/0018_search_runtime_hardening.sql",
     "db/migrations/0019_screening_indexes.sql",
+    "db/migrations/0020_current_assessment_scope.sql",
   ]) {
     await applySql(client, migration);
   }
@@ -194,7 +204,6 @@ try {
   const counts = await client.query(`
     select
       (select count(*)::bigint from core.property_account_current) current_rows,
-      (select count(*)::bigint from history.assessment_snapshot_record) assessment_rows,
       (select count(*)::bigint from history.tax_series) tax_rows,
       (select count(*)::bigint from history.sale_series) sale_account_rows,
       (
@@ -205,21 +214,37 @@ try {
   `);
   const summary = counts.rows[0];
   process.stdout.write(`${JSON.stringify(summary)}\n`);
+  const expectedRowsByTable = Object.fromEntries(
+    ACTIVE_LOADS.map(({ table, expectedRows }) => [table, expectedRows]),
+  );
   if (
-    Number(summary.current_rows) !== 221263 ||
-    Number(summary.assessment_rows) !== 652131 ||
-    Number(summary.tax_rows) !== 221263 ||
-    Number(summary.sale_account_rows) !== 215408 ||
-    Number(summary.sale_source_rows) !== 421436
+    Number(summary.current_rows) !==
+      expectedRowsByTable["core.property_account_current"] ||
+    Number(summary.tax_rows) !== expectedRowsByTable["history.tax_series"] ||
+    Number(summary.sale_account_rows) !==
+      expectedRowsByTable["history.sale_series"] ||
+    Number(summary.sale_source_rows) !== EXPECTED_LINKED_SALE_ROWS
   ) {
     throw new Error("Post-load row-count gate failed.");
   }
-  if (Number(summary.database_size_bytes) > 480_000_000) {
-    throw new Error("PostgreSQL 480 MB free-tier safety gate failed.");
+  const databaseBytes = Number(summary.database_size_bytes);
+  const storageLevel = databaseSizeLevel(databaseBytes);
+  if (storageLevel === "hard_limit") {
+    throw new Error(
+      `PostgreSQL database is ${databaseBytes} bytes; ` +
+        "the 40 GB shared-volume release limit has been reached.",
+    );
+  }
+  if (storageLevel === "warning") {
+    process.stderr.write(
+      `WARNING: PostgreSQL database is ${databaseBytes} bytes; ` +
+        "the 25 GB shared-volume warning threshold has been reached.\n",
+    );
   }
 
   await applySql(client, "db/tests/postload_checks.sql");
   await applySql(client, "db/tests/reviewer_regressions.sql");
+  await applySql(client, "db/tests/v04_contract.sql");
   process.stdout.write("All post-load database gates passed.\n");
 } finally {
   await client.end().catch(() => {});

@@ -29,6 +29,16 @@ const scriptName = config.name;
 const workerPath = resolve(project, "worker", "dist", "worker.js");
 const baseUrl = new URL(config.vars.WORKOS_RESOURCE_URI).origin;
 const releaseMessage = `Release v${packageJson.version}: production hardening`;
+const argumentsList = process.argv.slice(2);
+if (
+  argumentsList.length !== 1 ||
+  argumentsList[0] !== "--stage-only"
+) {
+  throw new Error(
+    "Candidate deployment is stage-only. Pass --stage-only, complete " +
+      "authenticated candidate verification, then run promote-cloudflare.mjs.",
+  );
+}
 const apiBase =
   `https://api.cloudflare.com/client/v4/accounts/${accountId}` +
   `/workers/scripts/${scriptName}`;
@@ -134,7 +144,6 @@ if (!newVersion) throw new Error("Cloudflare did not return a Worker version ID.
 
 let staged = false;
 let stagedDeployment;
-let promotedDeployment;
 try {
   stagedDeployment = await createDeployment(
     [
@@ -155,20 +164,6 @@ try {
     scriptName,
     attempts: 20,
   });
-
-  promotedDeployment = await createDeployment(
-    [{ version_id: newVersion, percentage: 100 }],
-    releaseMessage,
-  );
-  // The active deployment pointer can take materially longer than an override
-  // to converge across custom-domain edges.
-  await new Promise((resolveDelay) => setTimeout(resolveDelay, 10_000));
-  await verifyLive({
-    baseUrl,
-    expectedVersion: packageJson.version,
-    scriptName,
-    attempts: 50,
-  });
 } catch (error) {
   if (staged) {
     try {
@@ -188,17 +183,21 @@ try {
 
 const result = {
   success: true,
+  status: "staged",
   release: packageJson.version,
   previous_version: stableVersion,
   version: newVersion,
   staged_deployment: stagedDeployment?.id ?? null,
-  production_deployment: promotedDeployment?.id ?? null,
+  production_deployment: null,
   verified_at: new Date().toISOString(),
 };
 const reportDirectory = resolve(project, "db", "reports", "generated");
 mkdirSync(reportDirectory, { recursive: true });
 writeFileSync(
-  resolve(reportDirectory, `release-${packageJson.version}.json`),
+  resolve(
+    reportDirectory,
+    `release-candidate-${packageJson.version}.json`,
+  ),
   `${JSON.stringify(result, null, 2)}\n`,
 );
 process.stdout.write(`${JSON.stringify(result)}\n`);

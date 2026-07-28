@@ -1,17 +1,9 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import pg from "../loader/node_modules/pg/lib/index.js";
+import { adminDatabaseConfig } from "./lib/hosted-db.mjs";
 
 const project = resolve(import.meta.dirname, "..");
-const migrationPaths = [
-  "db/migrations/0013_sale_history_and_semantics.sql",
-  "db/migrations/0014_resolution_and_quality.sql",
-  "db/migrations/0015_lender_api.sql",
-  "db/migrations/0016_evidence_and_dictionary.sql",
-  "db/migrations/0017_free_tier_headroom.sql",
-  "db/migrations/0018_search_runtime_hardening.sql",
-  "db/migrations/0019_screening_indexes.sql",
-];
 
 function readEnv(path) {
   const result = {};
@@ -25,26 +17,11 @@ function readEnv(path) {
   return result;
 }
 
-function transactionBody(relativePath) {
-  return readFileSync(resolve(project, relativePath), "utf8")
-    .replace(/^\s*begin;\s*/i, "")
-    .replace(/\s*(commit|rollback);\s*$/i, "");
-}
-
 const env = readEnv(resolve(project, ".env.hosted"));
-const password =
-  process.env.SUPABASE_DB_PASSWORD ?? env.SUPABASE_DB_PASSWORD;
-const projectRef =
-  process.env.SUPABASE_PROJECT_REF ?? env.SUPABASE_PROJECT_REF;
-if (!password || !projectRef) {
-  throw new Error("Supabase remediation-validation credentials are unavailable.");
-}
+const databaseEnvironment = { ...env, ...process.env };
 
 const client = new pg.Client({
-  connectionString:
-    `postgresql://postgres:${encodeURIComponent(password)}` +
-    `@db.${projectRef}.supabase.co:5432/postgres`,
-  ssl: { rejectUnauthorized: false },
+  ...adminDatabaseConfig(databaseEnvironment),
   statement_timeout: 0,
   application_name: "dc-property-reviewer-remediation-validator",
 });
@@ -52,11 +29,6 @@ const client = new pg.Client({
 await client.connect();
 try {
   await client.query("begin");
-  for (const migrationPath of migrationPaths) {
-    await client.query(transactionBody(migrationPath));
-    await client.query("reset role");
-    process.stdout.write(`Applied in rollback-only test: ${migrationPath}\n`);
-  }
 
   await client.query(`
     insert into history.sale_series (
@@ -84,7 +56,13 @@ try {
     "Ensured a sale-history fixture exists in rollback-only test.\n",
   );
 
-  await client.query(transactionBody("db/tests/reviewer_regressions.sql"));
+  const reviewerRegressions = readFileSync(
+    resolve(project, "db/tests/reviewer_regressions.sql"),
+    "utf8",
+  )
+    .replace(/^\s*begin;\s*/i, "")
+    .replace(/\s*(commit|rollback);\s*$/i, "");
+  await client.query(reviewerRegressions);
   process.stdout.write("Reviewer regression SQL passed.\n");
 
   await client.query("set local role mcp_runtime");

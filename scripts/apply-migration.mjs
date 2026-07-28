@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { extname, isAbsolute, relative, resolve } from "node:path";
 import pg from "../loader/node_modules/pg/lib/index.js";
+import { adminDatabaseConfig } from "./lib/hosted-db.mjs";
 
 const migration = process.argv[2];
 const project = resolve(import.meta.dirname, "..");
@@ -18,10 +19,7 @@ if (!migration || extname(sqlPath).toLowerCase() !== ".sql" || !isAllowed) {
 }
 
 const client = new pg.Client({
-  connectionString:
-    `postgresql://postgres:${encodeURIComponent(process.env.SUPABASE_DB_PASSWORD)}` +
-    `@db.${process.env.SUPABASE_PROJECT_REF}.supabase.co:5432/postgres`,
-  ssl: { rejectUnauthorized: false },
+  ...adminDatabaseConfig(process.env),
   statement_timeout: 0,
   application_name: "dc-property-migration",
 });

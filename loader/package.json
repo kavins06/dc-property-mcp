@@ -6,7 +6,15 @@
   "engines": {
     "node": ">=22"
   },
+  "scripts": {
+    "bind:core-artifact": "node bind-core-artifact.mjs",
+    "load:regulatory": "node load-regulatory.mjs",
+    "purge:regulatory-batch": "node purge-regulatory-batch.mjs",
+    "test": "node --test *.test.mjs"
+  },
   "dependencies": {
+    "csv-parse": "7.0.1",
+    "csv-stringify": "6.8.1",
     "pg": "8.22.0",
     "pg-copy-streams": "7.0.0"
   }
