@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createReadStream, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseEnv } from "node:util";
 import pg from "pg";
 
 import { adminDatabaseConfig } from "../scripts/lib/hosted-db.mjs";
@@ -23,18 +24,6 @@ const buildManifestPath = resolve(
   "manifests",
   "build_manifest.json",
 );
-
-function readEnv(path) {
-  const result = {};
-  for (const rawLine of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const separator = line.indexOf("=");
-    if (separator < 1) continue;
-    result[line.slice(0, separator)] = line.slice(separator + 1);
-  }
-  return result;
-}
 
 async function fileSha256(path) {
   const hash = createHash("sha256");
@@ -72,7 +61,7 @@ if (await fileSha256(artifactPath) !== artifactSha256) {
 }
 
 const env = {
-  ...readEnv(resolve(project, ".env.hosted")),
+  ...parseEnv(readFileSync(resolve(project, ".env.hosted"), "utf8")),
   ...process.env,
 };
 const client = new pg.Client({

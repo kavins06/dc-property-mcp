@@ -13,6 +13,12 @@ const propertyInput = {
   ssl: z.string().trim().min(1).max(32).optional(),
   address: z.string().trim().min(2).max(160).optional(),
 };
+const READ_ONLY_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+} as const;
 
 function toolResult(result: Record<string, unknown>) {
   const text = JSON.stringify(result);
@@ -69,12 +75,7 @@ export function createServer(env: Env): McpServer {
         limit: z.number().int().min(1).max(10).default(10),
       },
       outputSchema: resultSchema,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ ssl, address, include_deleted, limit }) =>
       toolResult(
@@ -94,12 +95,7 @@ export function createServer(env: Env): McpServer {
         "Use whenever the user asks for all data, everything available, a complete record, a full property report, or the entire record for one property. Resolves identity and returns all nine property-data sections: snapshot, assessments, tax/balance history, ownership, sales/deed history, permits, licenses, inspections/enforcement, and building/land context. Check coverage.complete; follow every named continuation when false. Do not substitute a single domain tool for a complete-record request.",
       inputSchema: propertyInput,
       outputSchema: resultSchema,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ ssl, address }) =>
       toolResult(
@@ -127,12 +123,7 @@ export function createServer(env: Env): McpServer {
         ).min(1).max(50),
       },
       outputSchema: resultSchema,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ items }) =>
       toolResult(
@@ -182,12 +173,7 @@ export function createServer(env: Env): McpServer {
         description: tool.description,
         inputSchema: propertyInput,
         outputSchema: resultSchema,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          idempotentHint: true,
-          openWorldHint: false,
-        },
+        annotations: READ_ONLY_ANNOTATIONS,
       },
       async ({ ssl, address }) =>
         toolResult(await callApi(env, tool.db, [ssl ?? null, address ?? null])),
@@ -233,12 +219,7 @@ export function createServer(env: Env): McpServer {
         description: tool.description,
         inputSchema: regulatoryInput,
         outputSchema: resultSchema,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          idempotentHint: true,
-          openWorldHint: false,
-        },
+        annotations: READ_ONLY_ANNOTATIONS,
       },
       async ({ ssl, address, cursor, limit }) =>
         toolResult(
@@ -282,12 +263,7 @@ export function createServer(env: Env): McpServer {
         limit: z.number().int().min(1).max(50).default(20),
       },
       outputSchema: resultSchema,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async (input) =>
       toolResult(
@@ -305,9 +281,7 @@ export function createServer(env: Env): McpServer {
       },
       outputSchema: resultSchema,
       annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
+        ...READ_ONLY_ANNOTATIONS,
         openWorldHint: true,
       },
     },
@@ -322,12 +296,7 @@ export function createServer(env: Env): McpServer {
         "Ask a data, coverage, code, or filter question. Returns a compact keyword-routed answer, discoverable filter vocabulary, limitations, and the best next tool; it does not invoke an LLM.",
       inputSchema: { question: z.string().max(500).optional() },
       outputSchema: resultSchema,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ question }) =>
       toolResult(await callApi(env, "describe_data", [question ?? null])),

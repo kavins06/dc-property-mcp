@@ -1,6 +1,7 @@
 import { createReadStream, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pipeline } from "node:stream/promises";
+import { parseEnv } from "node:util";
 import { createGunzip } from "node:zlib";
 import pg from "pg";
 import { from as copyFrom } from "pg-copy-streams";
@@ -15,18 +16,6 @@ const project = resolve(import.meta.dirname, "..");
 const migrations = resolve(project, "db", "migrations");
 const tests = resolve(project, "db", "tests");
 const generated = resolve(project, "data", "generated");
-
-function readEnv(path) {
-  const result = {};
-  for (const rawLine of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const separator = line.indexOf("=");
-    if (separator < 1) continue;
-    result[line.slice(0, separator)] = line.slice(separator + 1);
-  }
-  return result;
-}
 
 function sqlLiteral(value) {
   return `'${value.replaceAll("'", "''")}'`;
@@ -52,7 +41,9 @@ async function tableCount(client, table) {
   return Number(result.rows[0].rows);
 }
 
-const env = readEnv(resolve(project, ".env.hosted"));
+const env = parseEnv(
+  readFileSync(resolve(project, ".env.hosted"), "utf8"),
+);
 const adminPassword =
   process.env.DATABASE_LOAD_PASSWORD ?? env.DATABASE_ADMIN_PASSWORD;
 const runtimePassword = env.DC_PROPERTY_RUNTIME_PASSWORD;

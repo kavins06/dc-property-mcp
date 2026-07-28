@@ -1,22 +1,14 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseEnv } from "node:util";
+import { createCloudflareClient } from "./lib/cloudflare.mjs";
 import { verifyLive } from "./verify-live.mjs";
 
 const project = resolve(import.meta.dirname, "..");
 
-function readEnv(path) {
-  const result = {};
-  for (const rawLine of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const separator = line.indexOf("=");
-    if (separator < 1) continue;
-    result[line.slice(0, separator)] = line.slice(separator + 1);
-  }
-  return result;
-}
-
-const env = readEnv(resolve(project, ".env.hosted"));
+const env = parseEnv(
+  readFileSync(resolve(project, ".env.hosted"), "utf8"),
+);
 const config = JSON.parse(
   readFileSync(resolve(project, "worker", "wrangler.jsonc"), "utf8"),
 );
@@ -39,18 +31,17 @@ if (
       "authenticated candidate verification, then run promote-cloudflare.mjs.",
   );
 }
-const apiBase =
-  `https://api.cloudflare.com/client/v4/accounts/${accountId}` +
-  `/workers/scripts/${scriptName}`;
-const accountApiBase =
-  `https://api.cloudflare.com/client/v4/accounts/${accountId}`;
-
 if (!accountId || !token) {
   throw new Error("Cloudflare deployment credentials are not configured.");
 }
 if (!scriptName || !config.main || !config.compatibility_date) {
   throw new Error("Wrangler configuration is incomplete.");
 }
+const {
+  request: cloudflare,
+  accountRequest: accountCloudflare,
+  createDeployment,
+} = createCloudflareClient({ accountId, token, scriptName });
 
 function deploymentBindings() {
   return [
@@ -71,42 +62,6 @@ function deploymentBindings() {
       simple: binding.simple,
     })),
   ];
-}
-
-async function cloudflare(path, options = {}) {
-  const response = await fetch(`${apiBase}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-  const payload = await response.json();
-  if (!response.ok || !payload.success) {
-    throw new Error(
-      `Cloudflare API request failed (${response.status} ${path}): ` +
-        `${JSON.stringify(payload.errors ?? [])}`,
-    );
-  }
-  return payload.result;
-}
-
-async function accountCloudflare(path, options = {}) {
-  const response = await fetch(`${accountApiBase}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-  const payload = await response.json();
-  if (!response.ok || !payload.success) {
-    throw new Error(
-      `Cloudflare account API request failed (${response.status} ${path}): ` +
-        `${JSON.stringify(payload.errors ?? [])}`,
-    );
-  }
-  return payload.result;
 }
 
 async function enableExactVersionPreviews() {
@@ -136,18 +91,6 @@ async function getExactVersionPreviewUrl(versionId) {
     );
   }
   return new URL(previewUrl).origin;
-}
-
-async function createDeployment(versions, message) {
-  return cloudflare("/deployments", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      strategy: "percentage",
-      versions,
-      annotations: { "workers/message": message },
-    }),
-  });
 }
 
 const deploymentList = await cloudflare("/deployments");

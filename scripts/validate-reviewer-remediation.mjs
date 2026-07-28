@@ -1,23 +1,14 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseEnv } from "node:util";
 import pg from "../loader/node_modules/pg/lib/index.js";
 import { adminDatabaseConfig } from "./lib/hosted-db.mjs";
 
 const project = resolve(import.meta.dirname, "..");
 
-function readEnv(path) {
-  const result = {};
-  for (const rawLine of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const separator = line.indexOf("=");
-    if (separator < 1) continue;
-    result[line.slice(0, separator)] = line.slice(separator + 1);
-  }
-  return result;
-}
-
-const env = readEnv(resolve(project, ".env.hosted"));
+const env = parseEnv(
+  readFileSync(resolve(project, ".env.hosted"), "utf8"),
+);
 const databaseEnvironment = { ...env, ...process.env };
 
 const client = new pg.Client({

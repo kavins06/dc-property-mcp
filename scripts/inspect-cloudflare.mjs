@@ -1,55 +1,21 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseEnv } from "node:util";
+import { createCloudflareClient } from "./lib/cloudflare.mjs";
 
 const project = resolve(import.meta.dirname, "..");
 
-function readEnv(path) {
-  const result = {};
-  for (const rawLine of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const separator = line.indexOf("=");
-    if (separator < 1) continue;
-    result[line.slice(0, separator)] = line.slice(separator + 1);
-  }
-  return result;
-}
-
-const env = readEnv(resolve(project, ".env.hosted"));
+const env = parseEnv(
+  readFileSync(resolve(project, ".env.hosted"), "utf8"),
+);
 const config = JSON.parse(
   readFileSync(resolve(project, "worker", "wrangler.jsonc"), "utf8"),
 );
-const accountApi =
-  `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}`;
-const api = `${accountApi}/workers/scripts/${config.name}`;
-
-async function request(path) {
-  const response = await fetch(`${api}${path}`, {
-    headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` },
-  });
-  const payload = await response.json();
-  if (!response.ok || !payload.success) {
-    throw new Error(
-      `Cloudflare inspection failed (${response.status} ${path}): ` +
-        JSON.stringify(payload.errors ?? []),
-    );
-  }
-  return payload.result;
-}
-
-async function accountRequest(path) {
-  const response = await fetch(`${accountApi}${path}`, {
-    headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` },
-  });
-  const payload = await response.json();
-  if (!response.ok || !payload.success) {
-    throw new Error(
-      `Cloudflare account inspection failed (${response.status} ${path}): ` +
-        JSON.stringify(payload.errors ?? []),
-    );
-  }
-  return payload.result;
-}
+const { request, accountRequest } = createCloudflareClient({
+  accountId: env.CLOUDFLARE_ACCOUNT_ID,
+  token: env.CLOUDFLARE_API_TOKEN,
+  scriptName: config.name,
+});
 
 const [deploymentResult, versionResult, subdomainResult] = await Promise.all([
   request("/deployments"),

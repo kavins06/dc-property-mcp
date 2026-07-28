@@ -12,6 +12,7 @@ import {
   resolve,
 } from "node:path";
 import { pipeline } from "node:stream/promises";
+import { parseEnv } from "node:util";
 import { createGunzip } from "node:zlib";
 import { parse as parseCsv } from "csv-parse";
 import { stringify as stringifyCsv } from "csv-stringify";
@@ -40,18 +41,6 @@ const generatedRoot = resolve(
   "regulatory",
   "generated",
 );
-
-function readEnv(path) {
-  const result = {};
-  for (const rawLine of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const separator = line.indexOf("=");
-    if (separator < 1) continue;
-    result[line.slice(0, separator)] = line.slice(separator + 1);
-  }
-  return result;
-}
 
 function containedPath(root, requested) {
   const candidate = relative(root, requested);
@@ -376,7 +365,7 @@ if (
 }
 
 const env = {
-  ...readEnv(resolve(project, ".env.hosted")),
+  ...parseEnv(readFileSync(resolve(project, ".env.hosted"), "utf8")),
   ...process.env,
 };
 const client = new pg.Client({

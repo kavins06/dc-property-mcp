@@ -1,17 +1,12 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseEnv } from "node:util";
 import pg from "pg";
 import { adminDatabaseConfig } from "../scripts/lib/hosted-db.mjs";
 
 const project = resolve(import.meta.dirname, "..");
-const env = Object.fromEntries(
-  readFileSync(resolve(project, ".env.hosted"), "utf8")
-    .split(/\r?\n/)
-    .filter((line) => line.includes("="))
-    .map((line) => {
-      const separator = line.indexOf("=");
-      return [line.slice(0, separator), line.slice(separator + 1)];
-    }),
+const env = parseEnv(
+  readFileSync(resolve(project, ".env.hosted"), "utf8"),
 );
 const oldPassword = process.env.DATABASE_OLD_ADMIN_PASSWORD;
 if (!oldPassword) {

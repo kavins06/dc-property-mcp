@@ -12,9 +12,7 @@ const serverUrl = new URL(
 const authServerUrl = new URL(
   process.env.MCP_AUTH_SERVER_URL ?? serverUrl,
 );
-const isCandidate =
-  authServerUrl.origin !== serverUrl.origin ||
-  Boolean(process.env.CLOUDFLARE_WORKER_VERSION_ID?.trim());
+const isCandidate = authServerUrl.origin !== serverUrl.origin;
 const project = resolve(import.meta.dirname, "..");
 const callbackPort = Number(process.env.MCP_OAUTH_CALLBACK_PORT ?? 8765);
 const callbackTimeoutSeconds = Number(
@@ -30,31 +28,11 @@ if (
   );
 }
 const callbackUrl = `http://localhost:${callbackPort}/callback`;
-const workerVersionId =
-  process.env.CLOUDFLARE_WORKER_VERSION_ID?.trim() || undefined;
-const workerScriptName =
-  process.env.CLOUDFLARE_WORKER_SCRIPT_NAME?.trim() || "dc-property-mcp";
-
-async function candidateAwareFetch(input, init = {}) {
+async function loggingFetch(input, init = {}) {
   const requestUrl = new URL(
     input instanceof Request ? input.url : input.toString(),
   );
-  let response;
-  if (!workerVersionId || requestUrl.origin !== serverUrl.origin) {
-    response = await fetch(input, init);
-  } else {
-    const headers = new Headers(
-      input instanceof Request ? input.headers : undefined,
-    );
-    new Headers(init.headers).forEach((value, name) => {
-      headers.set(name, value);
-    });
-    headers.set(
-      "Cloudflare-Workers-Version-Overrides",
-      `${workerScriptName}="${workerVersionId}"`,
-    );
-    response = await fetch(input, { ...init, headers });
-  }
+  const response = await fetch(input, init);
   if (!response.ok) {
     const details = await response
       .clone()
@@ -154,7 +132,7 @@ const client = new Client(
 async function connect(targetUrl, targetClient, allowAuthorization) {
   const transport = new StreamableHTTPClientTransport(targetUrl, {
     authProvider: provider,
-    fetch: candidateAwareFetch,
+    fetch: loggingFetch,
   });
   try {
     await targetClient.connect(transport);
@@ -353,7 +331,6 @@ try {
     service_version: "0.4.1",
     endpoint: serverUrl.toString(),
     authorization_resource: authServerUrl.toString(),
-    worker_version_override: workerVersionId ?? null,
     tool_count: toolNames.length,
     tools: toolNames,
     statuses,

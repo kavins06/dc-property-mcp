@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.4.1 â€” 2026-07-28
+## Unreleased
+
+- Simplified internal loader and deployment tooling by removing obsolete
+  release-probe paths and consolidating environment and Cloudflare helpers.
+
+## 0.4.1 — 2026-07-28
 
 - Corrected every tax and assessment evidence destination to the current
   MyTax.DC.gov real-property search route: `https://mytax.dc.gov/_/#2`.

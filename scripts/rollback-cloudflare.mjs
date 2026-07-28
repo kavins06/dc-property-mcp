@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseEnv } from "node:util";
+import { createCloudflareClient } from "./lib/cloudflare.mjs";
 import { verifyLive } from "./verify-live.mjs";
 
 const project = resolve(import.meta.dirname, "..");
@@ -17,51 +19,20 @@ if (
   );
 }
 
-const env = Object.fromEntries(
-  readFileSync(resolve(project, ".env.hosted"), "utf8")
-    .split(/\r?\n/)
-    .filter((line) => line && !line.startsWith("#") && line.includes("="))
-    .map((line) => {
-      const separator = line.indexOf("=");
-      return [line.slice(0, separator), line.slice(separator + 1)];
-    }),
+const env = parseEnv(
+  readFileSync(resolve(project, ".env.hosted"), "utf8"),
 );
 const config = JSON.parse(
   readFileSync(resolve(project, "worker", "wrangler.jsonc"), "utf8"),
 );
-const api =
-  `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}` +
-  `/workers/scripts/${config.name}`;
-const headers = {
-  Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
-  "Content-Type": "application/json",
-};
-
-async function cloudflare(path, options = {}) {
-  const response = await fetch(`${api}${path}`, {
-    ...options,
-    headers: { ...headers, ...options.headers },
-  });
-  const payload = await response.json();
-  if (!response.ok || !payload.success) {
-    throw new Error(
-      `Cloudflare rollback request failed (${response.status}): ` +
-        `${JSON.stringify(payload.errors ?? [])}`,
-    );
-  }
-  return payload.result;
-}
-
-async function deploy(versionId, message) {
-  return cloudflare("/deployments", {
-    method: "POST",
-    body: JSON.stringify({
-      strategy: "percentage",
-      versions: [{ version_id: versionId, percentage: 100 }],
-      annotations: { "workers/message": message },
-    }),
-  });
-}
+const {
+  request: cloudflare,
+  createDeployment,
+} = createCloudflareClient({
+  accountId: env.CLOUDFLARE_ACCOUNT_ID,
+  token: env.CLOUDFLARE_API_TOKEN,
+  scriptName: config.name,
+});
 
 const deployments = await cloudflare("/deployments");
 const previousVersion =
@@ -71,8 +42,8 @@ const previousVersion =
 if (!previousVersion) throw new Error("Could not resolve the current Worker version.");
 
 try {
-  const deployment = await deploy(
-    targetVersion,
+  const deployment = await createDeployment(
+    [{ version_id: targetVersion, percentage: 100 }],
     `Manual rollback to ${expectedServiceVersion}`,
   );
   await verifyLive({
@@ -88,6 +59,9 @@ try {
     })}\n`,
   );
 } catch (error) {
-  await deploy(previousVersion, "Automatic recovery after failed manual rollback");
+  await createDeployment(
+    [{ version_id: previousVersion, percentage: 100 }],
+    "Automatic recovery after failed manual rollback",
+  );
   throw error;
 }
