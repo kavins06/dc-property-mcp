@@ -92,6 +92,8 @@ try {
 
   const sourceRefs = [
     snapshot?.valuation?.current_total_value_dollars?.source_refs?.[0],
+    assessments?.assessments?.[0]?.total_value_dollars?.source_refs?.[0],
+    taxes?.current_summary?.total_liabilities_reported_cents?.source_refs?.[0],
     sale?.latest_assessor_deed?.instrument_number?.source_refs?.[0],
     sale?.sale_history?.[0]?.sale_price_dollars?.source_refs?.[0],
   ].filter((value) => typeof value === "string");
@@ -120,6 +122,10 @@ try {
 
   const serializedEvidence = JSON.stringify(evidence);
   const serializedTax = JSON.stringify(taxes);
+  const myTaxEvidence = evidence?.evidence?.filter((item) =>
+    item?.field_key?.startsWith("assessment.") ||
+    item?.field_key?.startsWith("tax.")
+  );
   const checks = {
     resolve_property: resolve?.status === "resolved",
     exact_address_resolution:
@@ -173,9 +179,18 @@ try {
         search.results[1].current_total_value_dollars,
     source_evidence:
       evidence?.status === "ok" &&
-      evidence?.evidence?.length === 3 &&
+      evidence?.evidence?.length === 5 &&
       evidence.evidence.every((item) =>
         typeof item?.human_verification?.portal_url === "string"
+      ) &&
+      myTaxEvidence?.length === 3 &&
+      myTaxEvidence.every(
+        (item) =>
+          item?.human_verification?.portal_url ===
+          "https://mytax.dc.gov/_/#2"
+      ) &&
+      !serializedEvidence.includes(
+        "https://mytax.dc.gov/?Link=PropertySearch&Check=1"
       ) &&
       !serializedEvidence.includes("services.arcgis.com") &&
       !serializedEvidence.includes("/_/Retrieve/"),

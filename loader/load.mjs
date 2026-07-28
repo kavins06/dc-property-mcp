@@ -194,6 +194,7 @@ try {
     "db/migrations/0018_search_runtime_hardening.sql",
     "db/migrations/0019_screening_indexes.sql",
     "db/migrations/0020_current_assessment_scope.sql",
+    "db/migrations/0025_mytax_source_route.sql",
   ]) {
     await applySql(client, migration);
   }

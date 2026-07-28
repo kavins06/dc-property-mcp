@@ -138,7 +138,7 @@ begin
   assert v_payload#>>'{evidence,0,field_key}' = 'assessment.current_total_value',
     'sample evidence reference is not fact-specific';
   assert v_payload#>>'{evidence,0,human_verification,portal_url}' =
-    'https://mytax.dc.gov/?Link=PropertySearch&Check=1',
+    'https://mytax.dc.gov/_/#2',
     'sample evidence lacks the MyTax human search portal';
   assert v_payload#>>'{evidence,0,human_verification,search_inputs,ssl}' is not null,
     'sample evidence lacks the exact SSL lookup input';

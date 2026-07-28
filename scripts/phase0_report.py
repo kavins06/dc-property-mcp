@@ -142,7 +142,7 @@ def main() -> None:
                         "property_type": (row.get("PROPTYPE") or "").strip(),
                         "record_extract_at": (row.get("EXTRACTDAT") or "")[:10].replace("/", "-"),
                         "human_portal_url": (
-                            "https://mytax.dc.gov/?Link=PropertySearch&Check=1"
+                            "https://mytax.dc.gov/_/#2"
                         ),
                         "verification_steps": [
                             f"Enter address {address} or SSL {ssl}",

@@ -551,7 +551,7 @@ begin
               (item->'human_verification') || jsonb_build_object(
                 'portal_name', 'MyTax.DC.gov Real Property Search',
                 'portal_url',
-                  'https://mytax.dc.gov/?Link=PropertySearch&Check=1',
+                  'https://mytax.dc.gov/_/#2',
                 'steps', jsonb_build_array(
                   'Open the MyTax.DC.gov Real Property Search.',
                   'Enter the supplied property address or SSL and select Search.',

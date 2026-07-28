@@ -102,7 +102,7 @@ as $$
         when 'recorder' then 'https://washington.dc.publicsearch.us/'
         when 'assessment_map' then
           'https://dcgis.maps.arcgis.com/apps/webappviewer/index.html?id=9a5c11c11dd347cc9c05d64499cc98ee'
-        else 'https://mytax.dc.gov/?Link=PropertySearch&Check=1'
+        else 'https://mytax.dc.gov/_/#2'
       end portal_url
     from expanded e
   )
@@ -185,7 +185,7 @@ as $$
         when e.portal_family = 'assessment_map' then jsonb_build_array(
           jsonb_build_object(
             'portal_name', 'MyTax.DC.gov Real Property Search',
-            'portal_url', 'https://mytax.dc.gov/?Link=PropertySearch&Check=1',
+            'portal_url', 'https://mytax.dc.gov/_/#2',
             'search_inputs', jsonb_strip_nulls(jsonb_build_object(
               'ssl', coalesce(e.ssl_display, e.ssl),
               'property_address', e.premise_address

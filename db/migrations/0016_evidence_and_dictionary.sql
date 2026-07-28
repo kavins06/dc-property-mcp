@@ -147,7 +147,7 @@ begin
           'https://dcgis.maps.arcgis.com/apps/webappviewer/index.html?id=9a5c11c11dd347cc9c05d64499cc98ee'
         when 'cama_sales' then
           'https://opendata.dc.gov/datasets/DCGIS::tax-system-property-sales-cama'
-        else 'https://mytax.dc.gov/?Link=PropertySearch&Check=1'
+        else 'https://mytax.dc.gov/_/#2'
       end portal_url,
       case
         when coalesce(e.latest_instrument_number, '') ~ '^[0-9]{10,}$'
@@ -292,7 +292,7 @@ begin
             jsonb_build_array(jsonb_build_object(
               'portal_name', 'MyTax.DC.gov Real Property Search',
               'portal_url',
-                'https://mytax.dc.gov/?Link=PropertySearch&Check=1',
+                'https://mytax.dc.gov/_/#2',
               'search_inputs', jsonb_strip_nulls(jsonb_build_object(
                 'ssl', coalesce(e.ssl_display, e.ssl),
                 'property_address', e.premise_address

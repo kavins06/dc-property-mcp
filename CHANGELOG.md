@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Corrected every tax and assessment evidence destination to the current
+  MyTax.DC.gov real-property search route: `https://mytax.dc.gov/_/#2`.
+
 ## 0.4.0 — 2026-07-28
 
 - Added four bounded regulatory tools for permits, licenses,

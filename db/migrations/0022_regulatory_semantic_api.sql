@@ -4005,7 +4005,7 @@ begin
             jsonb_build_object(
               'portal_name', 'MyTax.DC.gov Real Property Search',
               'portal_url',
-                'https://mytax.dc.gov/?Link=PropertySearch&Check=1',
+                'https://mytax.dc.gov/_/#2',
               'search_inputs', jsonb_build_object(
                 'ssl', e.ssl_display,
                 'property_address', e.search_address
@@ -4018,7 +4018,7 @@ begin
             jsonb_build_object(
               'portal_name', 'MyTax.DC.gov Real Property Search',
               'portal_url',
-                'https://mytax.dc.gov/?Link=PropertySearch&Check=1',
+                'https://mytax.dc.gov/_/#2',
               'search_inputs', jsonb_build_object(
                 'ssl', e.ssl_display,
                 'property_address', e.search_address
