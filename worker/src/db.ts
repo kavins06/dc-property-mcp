@@ -4,6 +4,7 @@ import type { Env } from "./types";
 const ALLOWED_FUNCTIONS = new Set([
   "resolve_property",
   "resolve_properties_batch",
+  "get_complete_property_record",
   "get_property_snapshot",
   "get_assessment_history",
   "get_tax_and_balance_history",
@@ -94,7 +95,10 @@ export async function callApi(
     // Hyperdrive can reuse an existing PostgreSQL session whose role default
     // predates a timeout change, so set the ceiling explicitly per checkout.
     await client.query("set statement_timeout = '8s'");
-    const result = await client.query<{ result: Record<string, unknown> }>(sql, args);
+    const result = await client.query<{ result: Record<string, unknown> }>(
+      sql,
+      args,
+    );
     return result.rows[0]?.result ?? { status: "service_unavailable" };
   } catch (error) {
     return sanitizeDatabaseError(error);

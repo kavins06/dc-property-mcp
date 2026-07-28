@@ -42,6 +42,8 @@ if (
 const apiBase =
   `https://api.cloudflare.com/client/v4/accounts/${accountId}` +
   `/workers/scripts/${scriptName}`;
+const accountApiBase =
+  `https://api.cloudflare.com/client/v4/accounts/${accountId}`;
 
 if (!accountId || !token) {
   throw new Error("Cloudflare deployment credentials are not configured.");
@@ -89,6 +91,53 @@ async function cloudflare(path, options = {}) {
   return payload.result;
 }
 
+async function accountCloudflare(path, options = {}) {
+  const response = await fetch(`${accountApiBase}${path}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+  const payload = await response.json();
+  if (!response.ok || !payload.success) {
+    throw new Error(
+      `Cloudflare account API request failed (${response.status} ${path}): ` +
+        `${JSON.stringify(payload.errors ?? [])}`,
+    );
+  }
+  return payload.result;
+}
+
+async function enableExactVersionPreviews() {
+  const current = await cloudflare("/subdomain");
+  if (current.previews_enabled) return;
+  await cloudflare("/subdomain", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      enabled: Boolean(current.enabled),
+      previews_enabled: true,
+    }),
+  });
+}
+
+async function getExactVersionPreviewUrl(versionId) {
+  const versions = await accountCloudflare(
+    `/workers/workers/${scriptName}/versions`,
+  );
+  const version = versions.find((entry) => entry.id === versionId);
+  const previewUrl = version?.urls?.find((url) =>
+    url.startsWith("https://"),
+  );
+  if (!previewUrl) {
+    throw new Error(
+      `Cloudflare did not expose an exact preview URL for version ${versionId}.`,
+    );
+  }
+  return new URL(previewUrl).origin;
+}
+
 async function createDeployment(versions, message) {
   return cloudflare("/deployments", {
     method: "POST",
@@ -110,6 +159,8 @@ const stableVersion = activeDeployment?.versions
 if (!stableVersion) {
   throw new Error("No active Worker version is available for rollback.");
 }
+
+await enableExactVersionPreviews();
 
 const metadata = {
   main_module: "worker.js",
@@ -141,6 +192,7 @@ const uploaded = await cloudflare("/versions?bindings_inherit=strict", {
 });
 const newVersion = uploaded.id;
 if (!newVersion) throw new Error("Cloudflare did not return a Worker version ID.");
+const previewUrl = await getExactVersionPreviewUrl(newVersion);
 
 let staged = false;
 let stagedDeployment;
@@ -158,9 +210,9 @@ try {
   // globally before the version-override header is honored.
   await new Promise((resolveDelay) => setTimeout(resolveDelay, 5_000));
   await verifyLive({
-    baseUrl,
+    baseUrl: previewUrl,
     expectedVersion: packageJson.version,
-    versionId: newVersion,
+    expectedResourceUrl: config.vars.WORKOS_RESOURCE_URI,
     scriptName,
     attempts: 20,
   });
@@ -187,6 +239,8 @@ const result = {
   release: packageJson.version,
   previous_version: stableVersion,
   version: newVersion,
+  preview_url: previewUrl,
+  verification_method: "exact-version-preview",
   staged_deployment: stagedDeployment?.id ?? null,
   production_deployment: null,
   verified_at: new Date().toISOString(),

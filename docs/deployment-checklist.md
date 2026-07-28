@@ -114,15 +114,16 @@ npm audit --audit-level=moderate
 cd ..
 
 node scripts\deploy-cloudflare.mjs --stage-only
-$env:CLOUDFLARE_WORKER_VERSION_ID="<candidate-version-id>"
-node scripts\verify-authenticated-mcp.mjs
+$env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
+node scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
+Remove-Item Env:\MCP_AUTH_SERVER_URL
 node scripts\promote-cloudflare.mjs
-node scripts\verify-live.mjs 0.4.0
+node scripts\verify-live.mjs 0.4.1
 node scripts\verify-authenticated-mcp.mjs
 ```
 
 The candidate remains at 0% traffic until it passes health, headers, OAuth
-metadata, origin boundary, catalog, and all 14 authenticated tool calls. The
+metadata, origin boundary, catalog, and all 15 authenticated tool calls. The
 promotion helper refuses a stale candidate pair and automatically restores the
 previous Worker version if post-promotion verification fails.
 
@@ -138,12 +139,12 @@ previous Worker version if post-promotion verification fails.
   isolated restore proof are independently verified.
 - Existing VM applications remain healthy and memory/disk measurements do not
   justify a RAM upgrade.
-- The exact zero-traffic Worker candidate passes attended OAuth and all 14 MCP
+- The exact zero-traffic Worker candidate passes attended OAuth and all 15 MCP
   tools before promotion.
 - Previous Worker and Supabase Hyperdrive identifiers are recorded.
 - Git contains no credentials, private keys, dumps, generated source data, or
   secret-bearing reports.
-- The reviewed commit and `v0.4.0` tag are pushed and final production health
+- The reviewed commit and `v0.4.1` tag are pushed and final production health
   is rechecked.
 
 ## Official references

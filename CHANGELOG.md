@@ -1,9 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.4.1 â€” 2026-07-28
 
 - Corrected every tax and assessment evidence destination to the current
   MyTax.DC.gov real-property search route: `https://mytax.dc.gov/_/#2`.
+- Added `get_complete_property_record` for requests asking for all, complete,
+  full, entire, or everything available for one property. It returns all nine
+  data sections and explicit continuations if any bounded section remains.
+- Fixed exact address resolution for East, North, and South Capitol Street
+  aliases, including natural-language addresses ending in “in DC.”
+- Replaced custom-domain version-override release checks with exact
+  version-specific Worker preview checks, preventing a staged candidate from
+  being confused with the stable production version.
 
 ## 0.4.0 — 2026-07-28
 

@@ -20,6 +20,7 @@ describe("MCP tool catalog", () => {
         "describe_data",
         "get_assessment_history",
         "get_building_and_land_profile",
+        "get_complete_property_record",
         "get_inspection_and_enforcement_history",
         "get_latest_sale_and_deed",
         "get_license_history",
@@ -32,6 +33,11 @@ describe("MCP tool catalog", () => {
         "resolve_property",
         "search_properties",
       ]);
+      expect(
+        response.tools.find(
+          (tool) => tool.name === "get_complete_property_record",
+        )?.description,
+      ).toMatch(/all|complete|everything/i);
       expect(
         response.tools.find((tool) => tool.name === "get_latest_sale_and_deed")
           ?.description,
@@ -47,7 +53,7 @@ describe("MCP tool catalog", () => {
       expect(response.tools.every((tool) => tool.annotations?.readOnlyHint)).toBe(
         true,
       );
-      expect(SERVICE_VERSION).toBe("0.4.0");
+      expect(SERVICE_VERSION).toBe("0.4.1");
     } finally {
       await client.close();
       await server.close();

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { callApi } from "./db";
 import type { Env } from "./types";
 
-export const SERVICE_VERSION = "0.4.0";
+export const SERVICE_VERSION = "0.4.1";
 export const MAX_TOOL_RESPONSE_BYTES = 768 * 1024;
 
 // McpServer output validation requires an object schema. A Zod record is not
@@ -50,7 +50,11 @@ export function createServer(env: Env): McpServer {
         "Resolve identity before using facts; preserve fact-level dates, source references, " +
         "null meanings, proposed/current distinctions, and limitations. Never infer title, " +
         "lien priority, building metrics, NOI, occupancy, zoning compliance, or a lending decision. " +
-        "Use resolve_properties_batch only for a caller-supplied list of named assets.",
+        "Use resolve_properties_batch only for a caller-supplied list of named assets. " +
+        "When a user asks for all, everything, complete, full, or the entire available record " +
+        "for one property, call get_complete_property_record instead of stopping after one " +
+        "domain tool. If its coverage.complete value is false, follow every returned continuation " +
+        "until each section reports has_more false.",
     },
   );
 
@@ -79,6 +83,29 @@ export function createServer(env: Env): McpServer {
           address ?? null,
           include_deleted,
           limit,
+        ]),
+      ),
+  );
+
+  server.registerTool(
+    "get_complete_property_record",
+    {
+      description:
+        "Use whenever the user asks for all data, everything available, a complete record, a full property report, or the entire record for one property. Resolves identity and returns all nine property-data sections: snapshot, assessments, tax/balance history, ownership, sales/deed history, permits, licenses, inspections/enforcement, and building/land context. Check coverage.complete; follow every named continuation when false. Do not substitute a single domain tool for a complete-record request.",
+      inputSchema: propertyInput,
+      outputSchema: resultSchema,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ ssl, address }) =>
+      toolResult(
+        await callApi(env, "get_complete_property_record", [
+          ssl ?? null,
+          address ?? null,
         ]),
       ),
   );

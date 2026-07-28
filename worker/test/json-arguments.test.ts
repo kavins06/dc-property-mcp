@@ -33,6 +33,24 @@ afterEach(() => {
 });
 
 describe("JSONB tool arguments", () => {
+  it("routes complete-record requests through the exhaustive query", async () => {
+    const { client, env, server } = await connectedClient();
+    try {
+      await client.callTool({
+        name: "get_complete_property_record",
+        arguments: { address: "4800 E Capitol St NE in DC" },
+      });
+      expect(mockedCallApi).toHaveBeenCalledWith(
+        env,
+        "get_complete_property_record",
+        [null, "4800 E Capitol St NE in DC"],
+      );
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  });
+
   it("serializes batch, regulatory options, and search input as JSON", async () => {
     const { client, env, server } = await connectedClient();
     try {

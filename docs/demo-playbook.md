@@ -7,17 +7,26 @@ playbook defines checks, not substitute property facts.
 ## Preflight
 
 ```powershell
-node scripts\verify-live.mjs 0.4.0
+node scripts\verify-live.mjs 0.4.1
 node --env-file=.env.hosted scripts\verify-runtime.mjs
 python scripts\check_evidence.py
 node scripts\verify-authenticated-mcp.mjs
 ```
 
-Confirm that the live MCP advertises exactly 14 tools and that the authenticated
+Confirm that the live MCP advertises exactly 15 tools and that the authenticated
 client can call every tool. Do not proceed if identity resolution, OAuth,
 release-pinned evidence, exact/contextual linkage, or safe-error probes fail.
 
-## Act 1: cited collateral facts
+## Act 1: exhaustive single-property retrieval
+
+Ask for all available data on `4800 E Capitol St NE in DC`. Confirm the model
+calls `get_complete_property_record`, resolves SSL `5140--0088`, returns all
+nine sections, and reports complete coverage with no continuation. The release
+regression expects 42 permits, 4 licenses, 1 inspection/enforcement record, and
+15 building/land records. It must not stop after tax history or describe the
+other available domains as unqueried.
+
+## Act 2: cited collateral facts
 
 Anchor property: 1801 K Street NW, SSL `0107--0075`.
 
@@ -36,7 +45,7 @@ Anchor property: 1801 K Street NW, SSL `0107--0075`.
    CAMA is assessor sale history, not a Recorder chain of title, and show that
    the mailing-jurisdiction conflict remains visible for human review.
 
-## Act 2: permits, licenses, and building context
+## Act 3: permits, licenses, and building context
 
 Call all four regulatory tools with the resolved SSL:
 
@@ -56,7 +65,7 @@ For returned records, point out:
 - an empty result means no linked record in the frozen release, not proof that
   no public record exists
 
-## Act 3: lender screening and semantic guidance
+## Act 4: lender screening and semantic guidance
 
 Call `search_properties` with:
 
@@ -79,7 +88,7 @@ If a user asks for a filter, field, coverage, or regulatory-data question in
 natural language, call `describe_data` first. Confirm it recommends the narrow
 tool and returns valid vocabulary and inference boundaries.
 
-## Act 4: one-click human evidence and refusal behavior
+## Act 5: one-click human evidence and refusal behavior
 
 1. Send representative ITSPE, CAMA, permit/license, and building-context refs
    to `get_source_evidence`.

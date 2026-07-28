@@ -9,6 +9,12 @@ import { InMemoryOAuthClientProvider } from "../worker/node_modules/@modelcontex
 const serverUrl = new URL(
   process.argv[2] ?? "https://dc-property-mcp.quoindata.com/mcp",
 );
+const authServerUrl = new URL(
+  process.env.MCP_AUTH_SERVER_URL ?? serverUrl,
+);
+const isCandidate =
+  authServerUrl.origin !== serverUrl.origin ||
+  Boolean(process.env.CLOUDFLARE_WORKER_VERSION_ID?.trim());
 const project = resolve(import.meta.dirname, "..");
 const callbackPort = Number(process.env.MCP_OAUTH_CALLBACK_PORT ?? 8765);
 const callbackTimeoutSeconds = Number(
@@ -141,20 +147,26 @@ const provider = new InMemoryOAuthClientProvider(
   },
 );
 const client = new Client(
-  { name: "quoin-release-verifier", version: "0.4.0" },
+  { name: "quoin-release-verifier", version: "0.4.1" },
   { capabilities: {} },
 );
 
-async function connect() {
-  const transport = new StreamableHTTPClientTransport(serverUrl, {
+async function connect(targetUrl, targetClient, allowAuthorization) {
+  const transport = new StreamableHTTPClientTransport(targetUrl, {
     authProvider: provider,
     fetch: candidateAwareFetch,
   });
   try {
-    await client.connect(transport);
+    await targetClient.connect(transport);
     return transport;
   } catch (error) {
     if (!(error instanceof UnauthorizedError)) throw error;
+    if (!allowAuthorization) {
+      throw new Error(
+        `The audience-bound token was rejected by ${targetUrl.origin}.`,
+        { cause: error },
+      );
+    }
     await authorizationUrlPromise;
     let callbackTimeout;
     const code = await Promise.race([
@@ -172,7 +184,7 @@ async function connect() {
       }),
     ]).finally(() => clearTimeout(callbackTimeout));
     await transport.finishAuth(code);
-    return connect();
+    return connect(targetUrl, targetClient, false);
   }
 }
 
@@ -185,6 +197,7 @@ function structured(result) {
 const expectedTools = [
   "resolve_property",
   "resolve_properties_batch",
+  "get_complete_property_record",
   "get_property_snapshot",
   "get_assessment_history",
   "get_tax_and_balance_history",
@@ -215,6 +228,10 @@ const probes = [
       ],
     },
   ],
+  [
+    "get_complete_property_record",
+    { address: "4800 E Capitol St NE in DC" },
+  ],
   ["get_property_snapshot", { ssl: "01070075" }],
   ["get_assessment_history", { ssl: "01070075" }],
   ["get_tax_and_balance_history", { ssl: "01070075" }],
@@ -243,8 +260,21 @@ const probes = [
 ];
 
 let transport;
+let authTransport;
+let authClient;
 try {
-  transport = await connect();
+  if (authServerUrl.origin !== serverUrl.origin) {
+    authClient = new Client(
+      { name: "quoin-release-auth-bootstrap", version: "0.4.1" },
+      { capabilities: {} },
+    );
+    authTransport = await connect(authServerUrl, authClient, true);
+  }
+  transport = await connect(
+    serverUrl,
+    client,
+    authServerUrl.origin === serverUrl.origin,
+  );
   const catalog = await client.listTools();
   const toolNames = catalog.tools.map((tool) => tool.name).sort();
   const expectedNames = expectedTools.slice().sort();
@@ -272,6 +302,21 @@ try {
     ) {
       throw new Error(
         `${name} did not return the v0.4 regulatory response contract.`,
+      );
+    }
+    if (
+      name === "get_complete_property_record" &&
+      (
+        payload.coverage?.complete !== true ||
+        payload.coverage?.included_sections?.length !== 9 ||
+        payload.coverage?.record_counts?.permits !== 42 ||
+        payload.coverage?.record_counts?.licenses !== 4 ||
+        payload.coverage?.record_counts?.inspections_and_enforcement !== 1 ||
+        payload.coverage?.record_counts?.building_and_land !== 15
+      )
+    ) {
+      throw new Error(
+        "Complete-record tool did not exhaust every data domain for the incident property.",
       );
     }
     if (name === "get_latest_sale_and_deed") {
@@ -305,8 +350,9 @@ try {
 
   const verification = {
     passed: true,
-    service_version: "0.4.0",
+    service_version: "0.4.1",
     endpoint: serverUrl.toString(),
+    authorization_resource: authServerUrl.toString(),
     worker_version_override: workerVersionId ?? null,
     tool_count: toolNames.length,
     tools: toolNames,
@@ -320,7 +366,7 @@ try {
   writeFileSync(
     resolve(
       reportDirectory,
-      `authenticated-mcp-${workerVersionId ? "candidate" : "production"}-0.4.0.json`,
+      `authenticated-mcp-${isCandidate ? "candidate" : "production"}-0.4.1.json`,
     ),
     `${JSON.stringify(verification, null, 2)}\n`,
   );
@@ -328,5 +374,7 @@ try {
 } finally {
   callbackServer.close();
   if (transport) await transport.close().catch(() => undefined);
+  if (authTransport) await authTransport.close().catch(() => undefined);
   await client.close().catch(() => undefined);
+  if (authClient) await authClient.close().catch(() => undefined);
 }

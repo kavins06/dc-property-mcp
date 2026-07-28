@@ -115,6 +115,7 @@ const HIGH_COST_TOOLS = new Set([
   "get_license_history",
   "get_inspection_and_enforcement_history",
   "get_building_and_land_profile",
+  "get_complete_property_record",
 ]);
 
 export async function highCostRequestCount(

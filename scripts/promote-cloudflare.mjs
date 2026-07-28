@@ -47,7 +47,9 @@ if (
   candidate.status !== "staged" ||
   candidate.release !== packageJson.version ||
   !candidate.version ||
-  !candidate.previous_version
+  !candidate.previous_version ||
+  !candidate.preview_url ||
+  candidate.verification_method !== "exact-version-preview"
 ) {
   throw new Error("The staged Worker candidate report is invalid.");
 }

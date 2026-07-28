@@ -42,10 +42,11 @@ currently contains:
 - a 38-source official regulatory release with 3,623,995 source rows,
   2,600,666 served records, and 5,862,456 property-account links
 
-The MCP exposes 14 read-only tools:
+The MCP exposes 15 read-only tools:
 
 - identity and discovery: `resolve_property`, `resolve_properties_batch`, and
   `search_properties`
+- exhaustive single-property retrieval: `get_complete_property_record`
 - account facts: `get_property_snapshot`, `get_assessment_history`,
   `get_tax_and_balance_history`, `get_ownership_and_sale`, and
   `get_latest_sale_and_deed`
@@ -113,23 +114,24 @@ npm test
 npm run bundle
 npm audit --audit-level=moderate
 node --env-file=..\.env.hosted ..\scripts\deploy-cloudflare.mjs --stage-only
-$env:CLOUDFLARE_WORKER_VERSION_ID="<candidate-version-id>"
-node ..\scripts\verify-authenticated-mcp.mjs
+$env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
+node ..\scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
+Remove-Item Env:\MCP_AUTH_SERVER_URL
 node --env-file=..\.env.hosted ..\scripts\promote-cloudflare.mjs
-node ..\scripts\verify-live.mjs 0.4.0
+node ..\scripts\verify-live.mjs 0.4.1
 node ..\scripts\verify-authenticated-mcp.mjs
 ```
 
 The deployment helper uploads an immutable Worker version, attaches it at zero
-traffic, and smoke-tests that exact version through Cloudflare's
-version-override header. The candidate version ID is supplied to the attended
-OAuth verifier so all 14 tools run against the exact zero-traffic version.
+traffic, and smoke-tests its exact version-specific preview URL. The attended
+OAuth verifier authenticates against the production WorkOS resource and uses
+that audience-bound token to call all 15 tools on the zero-traffic preview.
 `promote-cloudflare.mjs` refuses stale candidate reports and automatically
 restores the previous version if post-promotion checks fail.
 
 `verify-authenticated-mcp.mjs` is an attended gate: it dynamically registers a
 temporary OAuth client, prints the WorkOS authorization URL, receives the
-localhost callback, discovers all 14 tools, and calls every tool without
+localhost callback, discovers all 15 tools, and calls every tool without
 persisting tokens. WorkOS may require a human-verification challenge.
 
 PostgreSQL is not designed around a provider plan ceiling. On the shared

@@ -75,6 +75,9 @@ try {
     `Probe candidate ${candidate}`,
   );
   await new Promise((resolveDelay) => setTimeout(resolveDelay, 5_000));
+  const stagedDeployments = await cloudflare(`${api}/deployments`);
+  const stagedActive =
+    stagedDeployments.deployments?.[0] ?? stagedDeployments[0];
 
   const results = [];
   for (const target of targets) {
@@ -100,6 +103,7 @@ try {
   process.stdout.write(`${JSON.stringify({
     stable_version: stable,
     candidate_version: candidate,
+    active_versions: stagedActive?.versions ?? [],
     results,
   }, null, 2)}\n`);
 } finally {

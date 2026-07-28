@@ -6,7 +6,7 @@
 - Health: `https://dc-property-mcp.quoindata.com/healthz`
 - Authentication: WorkOS AuthKit
 - Database: PostgreSQL 18 on Hetzner through Hyperdrive and Workers VPC
-- Contract: v0.4.0, 14 read-only MCP tools
+- Contract: v0.4.1, 15 read-only MCP tools
 
 A healthy unauthenticated MCP request returns `401` with a
 `WWW-Authenticate` link to protected-resource metadata.
@@ -153,10 +153,11 @@ restore after every material schema or backup-format change.
 
 ```powershell
 node scripts\deploy-cloudflare.mjs --stage-only
-$env:CLOUDFLARE_WORKER_VERSION_ID="<candidate-version-id>"
-node scripts\verify-authenticated-mcp.mjs
+$env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
+node scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
+Remove-Item Env:\MCP_AUTH_SERVER_URL
 node scripts\promote-cloudflare.mjs
-node scripts\verify-live.mjs 0.4.0
+node scripts\verify-live.mjs 0.4.1
 node scripts\verify-authenticated-mcp.mjs
 ```
 
@@ -165,10 +166,11 @@ localhost port 8765 for both IPv4 and IPv6 loopback. Open the URL in an
 external browser on the same computer. Tokens and temporary client data remain
 in process memory.
 
-The first verifier call targets the exact zero-traffic Worker version by
-Cloudflare version override. Promotion refuses a stale candidate/rollback pair.
-If public verification fails, the promotion helper restores the previous
-Worker version automatically.
+The first verifier call authenticates against the production WorkOS resource,
+then targets the exact zero-traffic Worker preview URL with the same
+audience-bound token. Promotion refuses a stale candidate/rollback pair. If
+public verification fails, the promotion helper restores the previous Worker
+version automatically.
 
 ## Monitoring and thresholds
 

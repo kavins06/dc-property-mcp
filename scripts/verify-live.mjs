@@ -14,6 +14,7 @@ function delay(milliseconds) {
 export async function verifyLive({
   baseUrl = "https://dc-property-mcp.quoindata.com",
   expectedVersion = packageJson.version,
+  expectedResourceUrl = `${baseUrl}/mcp`,
   versionId,
   scriptName = "dc-property-mcp",
   attempts = 15,
@@ -59,7 +60,7 @@ export async function verifyLive({
       const metadata = await metadataResponse.json();
       if (
         metadataResponse.status !== 200 ||
-        metadata.resource !== `${baseUrl}/mcp` ||
+        metadata.resource !== expectedResourceUrl ||
         !Array.isArray(metadata.authorization_servers) ||
         metadata.authorization_servers.length !== 1
       ) {

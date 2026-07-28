@@ -195,6 +195,8 @@ try {
     "db/migrations/0019_screening_indexes.sql",
     "db/migrations/0020_current_assessment_scope.sql",
     "db/migrations/0025_mytax_source_route.sql",
+    "db/migrations/0026_capitol_address_resolution.sql",
+    "db/migrations/0027_complete_property_record.sql",
   ]) {
     await applySql(client, migration);
   }
