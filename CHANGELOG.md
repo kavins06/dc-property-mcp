@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.3 — 2026-07-28
+
+- Simplified release verification by deriving its version from the Worker
+  package and using Node's test-scoped mock lifecycle.
+- No public MCP contract or tool-catalog changes.
+
 ## 0.4.2 — 2026-07-28
 
 - Simplified internal loader and deployment tooling by removing obsolete

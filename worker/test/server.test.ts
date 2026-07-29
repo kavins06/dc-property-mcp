@@ -53,7 +53,7 @@ describe("MCP tool catalog", () => {
       expect(response.tools.every((tool) => tool.annotations?.readOnlyHint)).toBe(
         true,
       );
-      expect(SERVICE_VERSION).toBe("0.4.2");
+      expect(SERVICE_VERSION).toBe("0.4.3");
     } finally {
       await client.close();
       await server.close();

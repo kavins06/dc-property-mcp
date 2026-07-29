@@ -118,7 +118,7 @@ $env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
 node scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node scripts\promote-cloudflare.mjs
-node scripts\verify-live.mjs 0.4.2
+node scripts\verify-live.mjs 0.4.3
 node scripts\verify-authenticated-mcp.mjs
 ```
 
@@ -144,7 +144,7 @@ previous Worker version if post-promotion verification fails.
 - Previous Worker and Supabase Hyperdrive identifiers are recorded.
 - Git contains no credentials, private keys, dumps, generated source data, or
   secret-bearing reports.
-- The reviewed commit and `v0.4.2` tag are pushed and final production health
+- The reviewed commit and `v0.4.3` tag are pushed and final production health
   is rechecked.
 
 ## Official references
