@@ -3,33 +3,28 @@ import test from "node:test";
 
 import { createCloudflareClient } from "../lib/cloudflare.mjs";
 
-test("Cloudflare client shares authentication and deployment formatting", async () => {
-  const originalFetch = globalThis.fetch;
+test("Cloudflare client shares authentication and deployment formatting", async (context) => {
   const requests = [];
-  globalThis.fetch = async (url, options = {}) => {
+  context.mock.method(globalThis, "fetch", async (url, options = {}) => {
     requests.push({ url, options });
     return {
       ok: true,
       status: 200,
       json: async () => ({ success: true, result: { id: "ok" } }),
     };
-  };
+  });
 
-  try {
-    const client = createCloudflareClient({
-      accountId: "account",
-      token: "token",
-      scriptName: "worker",
-    });
-    await client.request("/deployments");
-    await client.accountRequest("/workers/subdomain");
-    await client.createDeployment(
-      [{ version_id: "version", percentage: 100 }],
-      "Release",
-    );
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+  const client = createCloudflareClient({
+    accountId: "account",
+    token: "token",
+    scriptName: "worker",
+  });
+  await client.request("/deployments");
+  await client.accountRequest("/workers/subdomain");
+  await client.createDeployment(
+    [{ version_id: "version", percentage: 100 }],
+    "Release",
+  );
 
   assert.deepEqual(
     requests.map(({ url }) => url),

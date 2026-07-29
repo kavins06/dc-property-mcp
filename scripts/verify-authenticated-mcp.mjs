@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Client } from "../worker/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js";
 import { StreamableHTTPClientTransport } from "../worker/node_modules/@modelcontextprotocol/sdk/dist/esm/client/streamableHttp.js";
@@ -14,6 +14,9 @@ const authServerUrl = new URL(
 );
 const isCandidate = authServerUrl.origin !== serverUrl.origin;
 const project = resolve(import.meta.dirname, "..");
+const serviceVersion = JSON.parse(
+  readFileSync(resolve(project, "worker", "package.json"), "utf8"),
+).version;
 const callbackPort = Number(process.env.MCP_OAUTH_CALLBACK_PORT ?? 8765);
 const callbackTimeoutSeconds = Number(
   process.env.MCP_OAUTH_CALLBACK_TIMEOUT_SECONDS ?? 600,
@@ -125,7 +128,7 @@ const provider = new InMemoryOAuthClientProvider(
   },
 );
 const client = new Client(
-  { name: "quoin-release-verifier", version: "0.4.2" },
+  { name: "quoin-release-verifier", version: serviceVersion },
   { capabilities: {} },
 );
 
@@ -243,7 +246,7 @@ let authClient;
 try {
   if (authServerUrl.origin !== serverUrl.origin) {
     authClient = new Client(
-      { name: "quoin-release-auth-bootstrap", version: "0.4.2" },
+      { name: "quoin-release-auth-bootstrap", version: serviceVersion },
       { capabilities: {} },
     );
     authTransport = await connect(authServerUrl, authClient, true);
@@ -328,7 +331,7 @@ try {
 
   const verification = {
     passed: true,
-    service_version: "0.4.2",
+    service_version: serviceVersion,
     endpoint: serverUrl.toString(),
     authorization_resource: authServerUrl.toString(),
     tool_count: toolNames.length,
@@ -343,7 +346,7 @@ try {
   writeFileSync(
     resolve(
       reportDirectory,
-      `authenticated-mcp-${isCandidate ? "candidate" : "production"}-0.4.2.json`,
+      `authenticated-mcp-${isCandidate ? "candidate" : "production"}-${serviceVersion}.json`,
     ),
     `${JSON.stringify(verification, null, 2)}\n`,
   );
