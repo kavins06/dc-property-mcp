@@ -7,13 +7,13 @@ playbook defines checks, not substitute property facts.
 ## Preflight
 
 ```powershell
-node scripts\verify-live.mjs 0.4.3
+node scripts\verify-live.mjs 0.5.0
 node --env-file=.env.hosted scripts\verify-runtime.mjs
 python scripts\check_evidence.py
 node scripts\verify-authenticated-mcp.mjs
 ```
 
-Confirm that the live MCP advertises exactly 15 tools and that the authenticated
+Confirm that the live MCP advertises exactly 16 tools and that the authenticated
 client can call every tool. Do not proceed if identity resolution, OAuth,
 release-pinned evidence, exact/contextual linkage, or safe-error probes fail.
 

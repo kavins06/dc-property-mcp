@@ -73,7 +73,14 @@ not proof of completed or code-compliant work. A license at a premise is not
 proof of property ownership, a current lease, or tenant occupancy. Energy and
 BEPS records may describe a shared building rather than one tax account.
 
-No complete tax-bill PDF archive, deed-image/index chain, leases, NOI,
+The Recorder ingestion surface preserves indexed deeds, trusts, liens,
+releases, assignments, financing statements, parties, consideration, related
+instruments, and Square/Lot legal rows for the dates actually published by
+authorized collection runs. Coverage dates are returned at query time.
+Consideration is not automatically a loan amount, and a grantee is not
+automatically a lender.
+
+No complete tax-bill PDF archive, deed-image archive, leases, NOI,
 tenant roster, independently verified rentable area, zoning-compliance
 determination, title conclusion, lien-priority conclusion, survey, appraisal,
 or complete parcel geometry has been collected. Official CAMA building

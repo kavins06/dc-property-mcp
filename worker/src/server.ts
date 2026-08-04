@@ -3,7 +3,7 @@ import { z } from "zod";
 import { callApi } from "./db";
 import type { Env } from "./types";
 
-export const SERVICE_VERSION = "0.4.3";
+export const SERVICE_VERSION = "0.5.0";
 export const MAX_TOOL_RESPONSE_BYTES = 768 * 1024;
 
 // McpServer output validation requires an object schema. A Zod record is not
@@ -92,7 +92,7 @@ export function createServer(env: Env): McpServer {
     "get_complete_property_record",
     {
       description:
-        "Use whenever the user asks for all data, everything available, a complete record, a full property report, or the entire record for one property. Resolves identity and returns all nine property-data sections: snapshot, assessments, tax/balance history, ownership, sales/deed history, permits, licenses, inspections/enforcement, and building/land context. Check coverage.complete; follow every named continuation when false. Do not substitute a single domain tool for a complete-record request.",
+        "Use whenever the user asks for all data, everything available, a complete record, a full property report, or the entire record for one property. Resolves identity and returns all ten property-data sections: snapshot, assessments, tax/balance history, ownership, assessor sales/deeds, permits, licenses, inspections/enforcement, building/land context, and official Recorder instrument history. Check coverage.complete; follow every named continuation when false. Do not substitute a single domain tool for a complete-record request.",
       inputSchema: propertyInput,
       outputSchema: resultSchema,
       annotations: READ_ONLY_ANNOTATIONS,
@@ -234,6 +234,37 @@ export function createServer(env: Env): McpServer {
         ),
     );
   }
+
+  server.registerTool(
+    "get_recorder_instrument_history",
+    {
+      description:
+        "Use for official D.C. Recorder indexed deeds, trusts, liens, releases, assignments, financing statements, parties, consideration, and related instruments linked to one resolved property. This is not a title opinion, lien-priority determination, or current-loan-balance source; indexed consideration and party roles are returned without unsupported lender or principal inferences.",
+      inputSchema: {
+        ...propertyInput,
+        document_types: z
+          .array(z.string().trim().min(1).max(100))
+          .max(25)
+          .optional(),
+        cursor: z.string().regex(/^\d{4}-\d{2}-\d{2}:[0-9]+$/).optional(),
+        limit: z.number().int().min(1).max(50).default(20),
+      },
+      outputSchema: resultSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async ({ ssl, address, document_types, cursor, limit }) =>
+      toolResult(
+        await callApi(env, "get_recorder_instrument_history", [
+          ssl ?? null,
+          address ?? null,
+          JSON.stringify({
+            limit,
+            ...(document_types === undefined ? {} : { document_types }),
+            ...(cursor === undefined ? {} : { cursor }),
+          }),
+        ]),
+      ),
+  );
 
   server.registerTool(
     "search_properties",

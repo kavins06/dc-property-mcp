@@ -10,7 +10,10 @@ The project builds:
    pipeline for 38 official regulatory and building-data sources.
 3. Fact-level provenance and human-facing portal verification routes with
    exact address, SSL, or instrument lookup instructions.
-4. A curated Cloudflare-hosted MCP server protected by WorkOS AuthKit.
+4. An authorization-gated, resumable D.C. Recorder index collector and
+   transactional loader that never stores portal credentials or purchases
+   document images.
+5. A curated Cloudflare-hosted MCP server protected by WorkOS AuthKit.
 
 The canonical CSV files remain in the parent workspace and are never modified.
 Generated load files belong in `data/generated/` or
@@ -42,17 +45,19 @@ currently contains:
 - a 38-source official regulatory release with 3,623,995 source rows,
   2,600,666 served records, and 5,862,456 property-account links
 
-The MCP exposes 15 read-only tools:
+The MCP exposes 16 read-only tools:
 
 - identity and discovery: `resolve_property`, `resolve_properties_batch`, and
   `search_properties`
-- exhaustive single-property retrieval: `get_complete_property_record`
+- exhaustive ten-section single-property retrieval:
+  `get_complete_property_record`
 - account facts: `get_property_snapshot`, `get_assessment_history`,
   `get_tax_and_balance_history`, `get_ownership_and_sale`, and
   `get_latest_sale_and_deed`
 - regulatory facts: `get_permit_history`, `get_license_history`,
   `get_inspection_and_enforcement_history`, and
   `get_building_and_land_profile`
+- Recorder facts: `get_recorder_instrument_history`
 - evidence and semantic guidance: `get_source_evidence` and `describe_data`
 
 The four regulatory tools preserve the publishing agency, record type, and
@@ -105,6 +110,26 @@ hidden batch, checkpoints resumable phases, runs publication gates, and changes
 current-release pointers only after every gate passes. It refuses an in-place
 double snapshot when current regulatory pointers already exist.
 
+Recorder collection uses a dedicated ignored browser profile. The user signs
+in directly to the official portal once; the automation never reads a
+password, exports authentication state, requests document images, or places an
+order. Each collection is date-bounded, rate-limited, resumable by immutable
+page artifact, and bound to a short written-authorization reference:
+
+```powershell
+cd recorder
+npm ci
+npx playwright install chromium
+$env:DC_RECORDER_AUTHORIZATION_REF="DC Recorder written authorization, YYYY-MM-DD"
+npm run login
+npm run collect -- --from=2026-07-24 --to=2026-07-24 --details=secured
+node --env-file=..\.env.hosted src/load.mjs ..\data\recorder\manifest-2026-07-24-2026-07-24.json --manifest-sha256 <sha256>
+```
+
+Collection stops on HTTP 403/429 or a human-verification challenge. See
+`docs/recorder-ingestion.md` for backfill, scheduling, provenance, and field
+semantics.
+
 Worker validation and deployment:
 
 ```powershell
@@ -118,20 +143,20 @@ $env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
 node ..\scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node --env-file=..\.env.hosted ..\scripts\promote-cloudflare.mjs
-node ..\scripts\verify-live.mjs 0.4.3
+node ..\scripts\verify-live.mjs 0.5.0
 node ..\scripts\verify-authenticated-mcp.mjs
 ```
 
 The deployment helper uploads an immutable Worker version, attaches it at zero
 traffic, and smoke-tests its exact version-specific preview URL. The attended
 OAuth verifier authenticates against the production WorkOS resource and uses
-that audience-bound token to call all 15 tools on the zero-traffic preview.
+that audience-bound token to call all 16 tools on the zero-traffic preview.
 `promote-cloudflare.mjs` refuses stale candidate reports and automatically
 restores the previous version if post-promotion checks fail.
 
 `verify-authenticated-mcp.mjs` is an attended gate: it dynamically registers a
 temporary OAuth client, prints the WorkOS authorization URL, receives the
-localhost callback, discovers all 15 tools, and calls every tool without
+localhost callback, discovers all 16 tools, and calls every tool without
 persisting tokens. WorkOS may require a human-verification challenge.
 
 PostgreSQL is not designed around a provider plan ceiling. On the shared
@@ -141,8 +166,8 @@ reports, and application backups are retained in the private `quoindata`
 Hetzner S3-compatible bucket; PostgreSQL is a serving database, not the sole
 archive.
 
-Application backups use format v3 and cover `meta`, `core`, `history`,
-`semantic`, `regulatory`, and `property_context`. A verified backup is not a
+Application backups use format v4 and cover `meta`, `core`, `history`,
+`semantic`, `regulatory`, `property_context`, and `recorder`. A verified backup is not a
 restore proof: every material release must also restore into an isolated empty
 PostgreSQL target and pass the database contracts and runtime probes.
 

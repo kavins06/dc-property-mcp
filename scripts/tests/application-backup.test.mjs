@@ -150,6 +150,7 @@ test("backup manifests contain deterministic totals and validate successfully", 
     "semantic",
     "regulatory",
     "property_context",
+    "recorder",
   ]);
   assert.deepEqual(manifest.schemas, [...APPLICATION_SCHEMAS]);
   assert.deepEqual(manifest.sequences, [sampleSequence()]);

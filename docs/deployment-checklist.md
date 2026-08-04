@@ -16,8 +16,8 @@ secret stores, and rotate any credential that is exposed.
 
 Verify that existing ports 5432 and 5433 and the existing Quoin applications
 remain unchanged. Confirm `mcp_runtime` cannot select from `meta`, `core`,
-`history`, `semantic`, `regulatory`, or `property_context`, and can execute
-only the 14 public `api_v1` functions.
+`history`, `semantic`, `regulatory`, `property_context`, or `recorder`, and
+can execute only the allowlisted public `api_v1` functions.
 
 The database is not constrained by a provider plan ceiling. The 197 GB shared
 Volume has a 25 GB review warning and a 40 GB hard publication gate.
@@ -44,6 +44,26 @@ cd loader
 node purge-regulatory-batch.mjs <batch_id> --confirm
 ```
 
+## Recorder release
+
+Apply and contract-test the Recorder schema before deploying the v0.5 Worker:
+
+```powershell
+node --env-file=.env.hosted scripts\validate-migrations.mjs `
+  db/migrations/0028_recorder_instruments.sql `
+  db/migrations/0029_complete_record_recorder.sql `
+  --test db/tests/0029_complete_record_recorder_contract.sql
+node --env-file=.env.hosted scripts\apply-migration.mjs `
+  db/migrations/0028_recorder_instruments.sql
+node --env-file=.env.hosted scripts\apply-migration.mjs `
+  db/migrations/0029_complete_record_recorder.sql
+```
+
+Load only a hash-verified, authorization-referenced Recorder manifest. Confirm
+the run is published and coverage dates/counts reconcile before the Worker
+candidate is tested. Application backup and isolated restore evidence must
+include the `recorder` schema.
+
 ## Hetzner Object Storage
 
 Use the private `quoindata` bucket at
@@ -62,7 +82,7 @@ receipt. Preserve the receipt as release evidence.
 
 ## Backup and recovery
 
-Create and verify application backup format v3:
+Create and verify application backup format v4:
 
 ```powershell
 node --env-file=.env.hosted scripts\backup-application.mjs --output-dir <directory>
@@ -118,12 +138,12 @@ $env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
 node scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node scripts\promote-cloudflare.mjs
-node scripts\verify-live.mjs 0.4.3
+node scripts\verify-live.mjs 0.5.0
 node scripts\verify-authenticated-mcp.mjs
 ```
 
 The candidate remains at 0% traffic until it passes health, headers, OAuth
-metadata, origin boundary, catalog, and all 15 authenticated tool calls. The
+metadata, origin boundary, catalog, and all 16 authenticated tool calls. The
 promotion helper refuses a stale candidate pair and automatically restores the
 previous Worker version if post-promotion verification fails.
 
@@ -139,12 +159,12 @@ previous Worker version if post-promotion verification fails.
   isolated restore proof are independently verified.
 - Existing VM applications remain healthy and memory/disk measurements do not
   justify a RAM upgrade.
-- The exact zero-traffic Worker candidate passes attended OAuth and all 15 MCP
+- The exact zero-traffic Worker candidate passes attended OAuth and all 16 MCP
   tools before promotion.
 - Previous Worker and Supabase Hyperdrive identifiers are recorded.
 - Git contains no credentials, private keys, dumps, generated source data, or
   secret-bearing reports.
-- The reviewed commit and `v0.4.3` tag are pushed and final production health
+- The reviewed commit and `v0.5.0` tag are pushed and final production health
   is rechecked.
 
 ## Official references

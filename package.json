@@ -1,0 +1,24 @@
+{
+  "name": "dc-property-mcp",
+  "version": "1.0.0",
+  "description": "Read-only, lender-oriented Washington, D.C. property-account data service.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kavins06/dc-property-mcp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kavins06/dc-property-mcp/issues"
+  },
+  "homepage": "https://github.com/kavins06/dc-property-mcp#readme"
+}

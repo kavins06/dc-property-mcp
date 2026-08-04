@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0 — 2026-07-28
+
+- Added an authorization-gated, date-sliced D.C. Recorder index collector with
+  a dedicated browser profile, rate-limit and human-challenge stops, blocked
+  document-image traffic, resumable hashed page artifacts, and no credential
+  export.
+- Added transactional, idempotent Recorder publication with immutable record
+  versions, exact Square/Lot links, conservative range handling,
+  least-privileged serving, and application-backup format v4.
+- Added `get_recorder_instrument_history` for bounded deed, trust, lien,
+  release, assignment, financing-statement, party, consideration, legal, and
+  related-instrument retrieval without title, lender, principal, balance, or
+  priority inference.
+
 ## 0.4.3 — 2026-07-28
 
 - Simplified release verification by deriving its version from the Worker

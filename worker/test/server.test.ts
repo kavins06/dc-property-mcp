@@ -27,6 +27,7 @@ describe("MCP tool catalog", () => {
         "get_ownership_and_sale",
         "get_permit_history",
         "get_property_snapshot",
+        "get_recorder_instrument_history",
         "get_source_evidence",
         "get_tax_and_balance_history",
         "resolve_properties_batch",
@@ -43,6 +44,11 @@ describe("MCP tool catalog", () => {
           ?.description,
       ).toContain("history");
       expect(
+        response.tools.find(
+          (tool) => tool.name === "get_recorder_instrument_history",
+        )?.description,
+      ).toMatch(/not a title opinion/i);
+      expect(
         response.tools.find((tool) => tool.name === "resolve_properties_batch")
           ?.description,
       ).toContain("named");
@@ -53,7 +59,7 @@ describe("MCP tool catalog", () => {
       expect(response.tools.every((tool) => tool.annotations?.readOnlyHint)).toBe(
         true,
       );
-      expect(SERVICE_VERSION).toBe("0.4.3");
+      expect(SERVICE_VERSION).toBe("0.5.0");
     } finally {
       await client.close();
       await server.close();

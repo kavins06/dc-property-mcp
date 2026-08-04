@@ -14,8 +14,17 @@ import { StringDecoder } from "node:string_decoder";
 import { createGunzip } from "node:zlib";
 
 export const APPLICATION_BACKUP_KIND = "dc-property-application";
-export const APPLICATION_BACKUP_FORMAT_VERSION = 3;
+export const APPLICATION_BACKUP_FORMAT_VERSION = 4;
 export const APPLICATION_SCHEMAS = Object.freeze([
+  "meta",
+  "core",
+  "history",
+  "semantic",
+  "regulatory",
+  "property_context",
+  "recorder",
+]);
+const REGULATORY_APPLICATION_SCHEMAS = Object.freeze([
   "meta",
   "core",
   "history",
@@ -327,7 +336,7 @@ export function validateBackupManifest(manifest) {
   assertPlainObject(manifest, "manifest");
   if (
     manifest.backup_kind !== APPLICATION_BACKUP_KIND ||
-    ![1, 2, APPLICATION_BACKUP_FORMAT_VERSION].includes(
+    ![1, 2, 3, APPLICATION_BACKUP_FORMAT_VERSION].includes(
       manifest.format_version,
     )
   ) {
@@ -341,7 +350,9 @@ export function validateBackupManifest(manifest) {
   const expectedSchemas =
     manifest.format_version === 1
       ? LEGACY_APPLICATION_SCHEMAS
-      : APPLICATION_SCHEMAS;
+      : manifest.format_version < 4
+        ? REGULATORY_APPLICATION_SCHEMAS
+        : APPLICATION_SCHEMAS;
   if (JSON.stringify(manifest.schemas) !== JSON.stringify(expectedSchemas)) {
     throw new Error("Manifest application-schema list is incomplete.");
   }

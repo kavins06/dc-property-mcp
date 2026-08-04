@@ -14,6 +14,7 @@ const ALLOWED_FUNCTIONS = new Set([
   "get_license_history",
   "get_inspection_and_enforcement_history",
   "get_building_and_land_profile",
+  "get_recorder_instrument_history",
   "search_properties",
   "get_source_evidence",
   "describe_data",

@@ -23,11 +23,11 @@ Hetzner VM. Its data directory is
 The tunnel validates the dedicated `db-origin.quoindata.com` PostgreSQL
 certificate with `verify_full`.
 
-The Worker exposes 14 bounded, read-only MCP tools. WorkOS tokens are checked
+The Worker exposes 16 bounded, read-only MCP tools. WorkOS tokens are checked
 for signature, issuer, expiration, and the exact
 `https://dc-property-mcp.quoindata.com/mcp` audience. Hyperdrive connects as
-`mcp_runtime`, which has no direct table privileges and may execute only the
-14 allowlisted `api_v1` functions.
+`mcp_runtime`, which has no direct table privileges and may execute only
+allowlisted `api_v1` functions.
 
 The former Supabase database and its Hyperdrive configuration are retained only
 as a rollback target during the v0.4.0 bake period. They are not the active
@@ -45,8 +45,9 @@ is accepted.
 PostgreSQL is the serving database, not the only copy of a release. Encrypted
 pgBackRest full and differential backups plus continuous WAL archiving provide
 physical/PITR coverage in the same private object-storage account under an
-independent encrypted repository. Application backup format v3 covers `meta`,
-`core`, `history`, `semantic`, `regulatory`, and `property_context`; an isolated
+independent encrypted repository. Application backup format v4 covers `meta`,
+`core`, `history`, `semantic`, `regulatory`, `property_context`, and
+`recorder`; an isolated
 restore reconciles every table and sequence before runtime probes are accepted.
 
 ## Trust boundaries
@@ -58,6 +59,9 @@ restore reconciles every table and sequence before runtime probes are accepted.
 - `mcp_runtime` cannot select from serving tables or mutate application data.
 - Official portals are evidence destinations, not live machine dependencies;
   their current content cannot override frozen source extracts.
+- Recorder automation uses a dedicated local browser profile and stores only
+  normalized public index fields. Authentication state never enters artifacts,
+  logs, PostgreSQL, or Git.
 - Secrets remain in ignored environment files, root-only VM configuration, and
   provider secret stores. They do not belong in Git, receipts, logs, or reports.
 

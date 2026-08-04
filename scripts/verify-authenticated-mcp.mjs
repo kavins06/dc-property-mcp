@@ -188,6 +188,7 @@ const expectedTools = [
   "get_license_history",
   "get_inspection_and_enforcement_history",
   "get_building_and_land_profile",
+  "get_recorder_instrument_history",
   "search_properties",
   "get_source_evidence",
   "describe_data",
@@ -225,6 +226,7 @@ const probes = [
     { ssl: "01070075", limit: 1 },
   ],
   ["get_building_and_land_profile", { ssl: "01070075", limit: 1 }],
+  ["get_recorder_instrument_history", { ssl: "01070075", limit: 1 }],
   [
     "search_properties",
     {
@@ -289,7 +291,7 @@ try {
       name === "get_complete_property_record" &&
       (
         payload.coverage?.complete !== true ||
-        payload.coverage?.included_sections?.length !== 9 ||
+        payload.coverage?.included_sections?.length !== 10 ||
         payload.coverage?.record_counts?.permits !== 42 ||
         payload.coverage?.record_counts?.licenses !== 4 ||
         payload.coverage?.record_counts?.inspections_and_enforcement !== 1 ||
