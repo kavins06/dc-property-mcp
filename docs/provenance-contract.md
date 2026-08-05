@@ -10,6 +10,17 @@ Every scalar returned to an MCP client carries:
 - one or more source references
 - quality, conflict, and property-link-scope flags
 
+Normal sourced MCP responses also include two deduplicated top-level arrays:
+
+- `provenance` contains the developer-facing evidence records expanded from
+  each opaque `source_ref`.
+- `sources` contains only display-ready human verification routes, exact lookup
+  inputs, covered fields, relationship scope, access notes, and fallbacks.
+
+Applications displaying a sourced fact must expose a visible Source or Verify
+action using `sources`. Machine-facing provenance is retained for developers
+and audit systems; it is not the end-user verification interface.
+
 Source references are deduplicated in each response. When expanded, they include
 publisher, dataset, a human-facing official portal, exact lookup inputs, short
 verification steps, retrieval/archive timestamps, source release ID, file or

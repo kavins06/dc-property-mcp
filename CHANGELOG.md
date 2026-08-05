@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.5 — 2026-08-05
+
+- Added display-ready official human sources and developer-facing provenance
+  to sourced MCP responses by default.
+- Generalized source verification across MyTax, CAMA, Recorder, SCOUT, TOPS,
+  PropertyQuest, BEAM, DOEE well, DOB vacant/blighted, and ABCA records.
+- Preserved exact versus contextual property relationships, archived-release
+  meaning, existing response limits, and the working MyTax cookie bootstrap.
+
 ## 0.4.3 — 2026-07-28
 
 - Simplified release verification by deriving its version from the Worker

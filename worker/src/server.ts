@@ -3,7 +3,7 @@ import { z } from "zod";
 import { callApi } from "./db";
 import type { Env } from "./types";
 
-export const SERVICE_VERSION = "0.4.4";
+export const SERVICE_VERSION = "0.4.5";
 export const MAX_TOOL_RESPONSE_BYTES = 768 * 1024;
 
 // McpServer output validation requires an object schema. A Zod record is not
@@ -56,6 +56,8 @@ export function createServer(env: Env): McpServer {
         "Resolve identity before using facts; preserve fact-level dates, source references, " +
         "null meanings, proposed/current distinctions, and limitations. Never infer title, " +
         "lien priority, building metrics, NOI, occupancy, zoning compliance, or a lending decision. " +
+        "When displaying sourced facts, show a visible Source or Verify action using sources; " +
+        "show sources, not machine-facing provenance, to end users. " +
         "Use resolve_properties_batch only for a caller-supplied list of named assets. " +
         "When a user asks for all, everything, complete, full, or the entire available record " +
         "for one property, call get_complete_property_record instead of stopping after one " +
