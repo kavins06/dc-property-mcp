@@ -14,7 +14,8 @@ The project builds:
 
 The canonical CSV files remain in the parent workspace and are never modified.
 Generated load files belong in `data/generated/` or
-`data/regulatory/generated/` and are excluded from Git.
+`data/regulatory/generated/` or `data/parcel/generated/` and are excluded from
+Git.
 
 ## Hosted service
 
@@ -41,6 +42,8 @@ currently contains:
   diagnostics
 - a 38-source official regulatory release with 3,623,995 source rows,
   2,600,666 served records, and 5,862,456 property-account links
+- 142,700 searchable MAR addresses, 238,561 official address-to-parcel links,
+  and 291,896 searchable residential units
 
 The MCP exposes 15 read-only tools:
 
@@ -59,6 +62,11 @@ The four regulatory tools preserve the publishing agency, record type, and
 property-link scope. Only SSL-derived links are exact property facts.
 Shared-building, multi-parcel, and proximity matches are explicitly contextual
 and are not silently promoted to parcel facts.
+
+Exact address resolution also returns the official MAR parcel set. Multiple
+official parcels remain explicitly ambiguous so the caller selects the intended
+SSL; exact residential-unit matches narrow to an official condominium SSL when
+DC publishes one.
 
 The screening surface supports validated tax class, balance, tax-sale,
 sale-date, valuation, use, type, and ward filters; deterministic sorts;

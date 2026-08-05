@@ -56,7 +56,8 @@ const probes = [
     name: "exact_common_address",
     sql: "select api_v1.resolve_property(null, $1, false, 10) as value",
     values: ["1100 15th St NW"],
-    expectedStatus: "resolved",
+    expectedStatus: "ambiguous",
+    expectedRelationship: "official_mar_address_ssl_cross_reference",
     maxMs: 2_000,
   },
   {
@@ -122,6 +123,12 @@ try {
     }
     if (probe.expectedUnit && value.candidates?.[0]?.unit !== probe.expectedUnit) {
       throw new Error(`${probe.name}: wrong unit candidate`);
+    }
+    if (
+      probe.expectedRelationship &&
+      value.parcel_resolution?.relationship !== probe.expectedRelationship
+    ) {
+      throw new Error(`${probe.name}: wrong parcel relationship`);
     }
     const count = value.results?.length;
     if (probe.expectedCount !== undefined && count !== probe.expectedCount) {

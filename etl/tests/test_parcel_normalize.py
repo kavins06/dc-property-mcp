@@ -219,6 +219,11 @@ class ParcelSourceContractTests(unittest.TestCase):
                     "PARCEL": None,
                     "RESERVATION": None,
                     "LOT_TYPE": "TAX LOT",
+                }, {
+                    "OBJECTID": 4,
+                    "MARID": 999,
+                    "SSL": "0001 0002",
+                    "LOT_TYPE": "TAX LOT",
                 }],
             )
             _write_source(
@@ -234,6 +239,16 @@ class ParcelSourceContractTests(unittest.TestCase):
                     "UNIT_TYPE": "CONDO",
                     "CONDO_SSL": "0001 2004",
                     "STATUS": "ACTIVE",
+                }, {
+                    "OBJECTID": 5,
+                    "UNIT_ID": 201,
+                    "MAR_ID": 999,
+                    "FULL_ADDRESS": "2 TEST STREET NW UNIT 5",
+                    "PRIMARY_ADDRESS": "2 TEST STREET NW",
+                    "UNIT_NUMBER": "5",
+                    "UNIT_TYPE": "CONDO",
+                    "CONDO_SSL": "0001 2005",
+                    "STATUS": "ACTIVE",
                 }],
             )
 
@@ -246,6 +261,10 @@ class ParcelSourceContractTests(unittest.TestCase):
             self.assertEqual(first_manifest["source_count"], 3)
             self.assertEqual(
                 first_manifest["artifacts"]["mar_address_ssls.csv.gz"]["rows"],
+                1,
+            )
+            self.assertEqual(
+                first_manifest["artifacts"]["mar_residential_units.csv.gz"]["rows"],
                 1,
             )
             for name in first_manifest["artifacts"]:

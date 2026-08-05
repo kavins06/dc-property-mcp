@@ -129,8 +129,11 @@ try {
   const checks = {
     resolve_property: resolve?.status === "resolved",
     exact_address_resolution:
-      resolveExactAddress?.status === "resolved" &&
-      resolveExactAddress?.candidates?.[0]?.similarity_score === 1,
+      resolveExactAddress?.status === "ambiguous" &&
+      resolveExactAddress?.ambiguity_reason === "multiple_official_parcels" &&
+      resolveExactAddress?.parcel_resolution?.relationship ===
+        "official_mar_address_ssl_cross_reference" &&
+      resolveExactAddress?.parcel_resolution?.total_count > 1,
     full_postal_normalization:
       ["resolved", "ambiguous", "no_exact_match", "not_found"].includes(
         resolveFullPostal?.status,

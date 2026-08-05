@@ -60,8 +60,7 @@ def _ssl(value: Any, *, required: bool) -> str | None:
 def _official_parcel_id(value: Any) -> str:
     compact = re.sub(r"[\s-]+", "", str(value or "").strip().upper())
     if not re.fullmatch(
-        r"(?:\d{7,32}|\d{3,4}[A-Z][A-Z0-9./]{0,28}|"
-        r"(?:RES|PAR|PI)[A-Z0-9./]{1,28})",
+        r"(?=.{5,32}$)(?:\d{3,4}|RES|PAR|PI)[A-Z0-9./]+",
         compact,
     ):
         raise ValueError("SSL must be one valid official D.C. parcel identifier")
@@ -259,6 +258,15 @@ def normalize_parcel_data(
         normalize_residential_unit_row,
         ("unit_id",),
     )
+    address_mar_ids = {row["mar_id"] for row in addresses}
+    linked_address_ssls = [
+        row for row in address_ssls if row["mar_id"] in address_mar_ids
+    ]
+    xref_release["excluded_rows"] += len(address_ssls) - len(linked_address_ssls)
+    address_ssls = linked_address_ssls
+    linked_units = [row for row in units if row["mar_id"] in address_mar_ids]
+    unit_release["excluded_rows"] += len(units) - len(linked_units)
+    units = linked_units
 
     artifacts = {
         "mar_addresses.csv.gz": _write_artifact(

@@ -6,7 +6,7 @@ Status: approved for implementation on 2026-08-05.
   address-to-SSL, and residential-unit artifacts.
   - Acceptance: malformed identifiers and conflicting duplicates fail closed.
   - Verify: `python -m unittest discover -s .\etl\tests -p "test_*.py" -v`
-- [ ] Load current MAR snapshots and publish release metadata transactionally.
+- [x] Load current MAR snapshots and publish release metadata transactionally.
   - Acceptance: a failed load preserves the prior current snapshot.
   - Verify: `Set-Location .\loader; npm test`
 - [x] Add migration 0031 and the additive parcel-resolution contract.
