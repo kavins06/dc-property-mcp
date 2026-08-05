@@ -1097,10 +1097,88 @@ SOURCES: tuple[ArcGisSource, ...] = (
 )
 
 
-SOURCE_BY_ID = {source.source_id: source for source in SOURCES}
+PARCEL_SOURCES: tuple[ArcGisSource, ...] = (
+    ArcGisSource(
+        source_id="mar_address_current",
+        family="mar_address",
+        publisher="D.C. Office of the Chief Technology Officer / DC GIS",
+        dataset_name="Master Address Repository - Address Table",
+        item_id=None,
+        layer_url=(
+            f"{DCGIS_FEATURE_SERVER}/DCGIS_DATA/"
+            "Location_WebMercator/MapServer/6"
+        ),
+        landing_url="https://opendata.dc.gov/",
+        human_portal_url="https://mar2.data.dc.gov/",
+        human_portal_name="D.C. Master Address Repository (MAR 2)",
+        fields=("OBJECTID", "MAR_ID", "ADDRESS", "STATUS", "SSL"),
+        expected_min_rows=100_000,
+        source_limitations=(
+            "Official address identities. An address can relate to zero, one, "
+            "or many SSLs; the base SSL on an address row is not the complete "
+            "address-to-property relationship."
+        ),
+    ),
+    ArcGisSource(
+        source_id="mar_address_ssl_current",
+        family="mar_address_ssl",
+        publisher="D.C. Office of the Chief Technology Officer / DC GIS",
+        dataset_name="Master Address Repository - Address SSL XREF",
+        item_id=None,
+        layer_url=(
+            f"{DCGIS_FEATURE_SERVER}/DCGIS_DATA/"
+            "Location_WebMercator/MapServer/7"
+        ),
+        landing_url="https://opendata.dc.gov/",
+        human_portal_url="https://mar2.data.dc.gov/",
+        human_portal_name="D.C. Master Address Repository (MAR 2)",
+        fields=(
+            "OBJECTID", "MARID", "SSL", "SQUARE", "SUFFIX", "LOT",
+            "COL", "PARCEL", "RESERVATION", "LOT_TYPE",
+        ),
+        expected_min_rows=200_000,
+        source_limitations=(
+            "Official many-to-many address-to-SSL cross-reference. It does "
+            "not establish common ownership, one building, or one collateral asset."
+        ),
+    ),
+    ArcGisSource(
+        source_id="mar_residential_unit_current",
+        family="mar_residential_unit",
+        publisher="D.C. Office of the Chief Technology Officer / DC GIS",
+        dataset_name="Master Address Repository - Residential Units",
+        item_id=None,
+        layer_url=(
+            f"{DCGIS_FEATURE_SERVER}/DCGIS_DATA/"
+            "Property_and_Land_WebMercator/MapServer/68"
+        ),
+        landing_url="https://opendata.dc.gov/",
+        human_portal_url="https://mar2.data.dc.gov/",
+        human_portal_name="D.C. Master Address Repository (MAR 2)",
+        fields=(
+            "OBJECTID", "UNIT_ID", "MAR_ID", "FULL_ADDRESS",
+            "PRIMARY_ADDRESS", "UNIT_NUMBER", "UNIT_TYPE", "CONDO_SSL",
+            "STATUS",
+        ),
+        expected_min_rows=150_000,
+        source_limitations=(
+            "Official residential-unit identities. Only a populated CONDO_SSL "
+            "is used to narrow a unit to a condominium property identifier."
+        ),
+    ),
+)
+
+
+SOURCE_BY_ID = {
+    source.source_id: source for source in (*SOURCES, *PARCEL_SOURCES)
+}
 
 
 def sources_for_family(family: str | None) -> tuple[ArcGisSource, ...]:
     if family is None:
         return SOURCES
-    return tuple(source for source in SOURCES if source.family == family)
+    return tuple(
+        source
+        for source in (*SOURCES, *PARCEL_SOURCES)
+        if source.family == family
+    )
