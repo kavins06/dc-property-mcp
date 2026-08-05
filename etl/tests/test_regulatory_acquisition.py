@@ -188,14 +188,17 @@ class ArcGisValidationTests(unittest.TestCase):
         )
         _assert_snapshot_unchanged("fixture", before, dict(before))
 
+        # DCGIS alternates cache validators across equivalent edge responses;
+        # content guards, not transport headers, define snapshot stability.
+        alternate_edge = dict(before, etag='"v2"', last_modified="after")
+        _assert_snapshot_unchanged("fixture", before, alternate_edge)
+
         cases = {
             "row_count": 3,
             "object_id_inventory_sha256": (
                 _object_id_inventory_sha256([1, 3])
             ),
             "service_last_edit_ms": 1235,
-            "etag": '"v2"',
-            "last_modified": "after",
             "schema_fingerprint": "f" * 64,
         }
         for field, changed_value in cases.items():

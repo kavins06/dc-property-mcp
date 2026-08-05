@@ -302,8 +302,11 @@ def _assert_snapshot_unchanged(
     before: dict[str, Any],
     after: dict[str, Any],
 ) -> None:
+    volatile_headers = {"etag", "last_modified"}
     changed = sorted(
-        key for key in before if before.get(key) != after.get(key)
+        key
+        for key in before
+        if key not in volatile_headers and before.get(key) != after.get(key)
     )
     if changed:
         detail = ", ".join(changed)
