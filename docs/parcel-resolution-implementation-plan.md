@@ -16,7 +16,7 @@ Status: approved for implementation on 2026-08-05.
 - [x] Expose parcel pagination through the existing MCP resolver.
   - Acceptance: existing inputs remain valid and new bounds fail safely.
   - Verify: `Set-Location .\worker; npm run check; npm test; npm run bundle`
-- [ ] Acquire, archive, normalize, load, migrate, deploy, and smoke-test.
+- [x] Acquire, archive, normalize, load, migrate, deploy, and smoke-test.
   - Acceptance: representative production calls return source-linked official
     parcels without regressing existing tools.
   - Verify: authenticated MCP, runtime, security, and performance checks.

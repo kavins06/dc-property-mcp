@@ -26,9 +26,20 @@ try {
     "select api_v1.resolve_property($1, null, false, 10) result",
     [propertySsl],
   );
+  const trophyResolve = await call(
+    "resolve_trophy",
+    "select api_v1.resolve_property($1, null, false, 10, 0, 25) result",
+    [trophySsl],
+  );
+  const marRef = trophyResolve.parcel_resolution.parcels[0].source_refs[0];
+  const marEvidence = await call(
+    "mar_evidence",
+    "select api_v1.get_source_evidence($1::text[]) result",
+    [[marRef]],
+  );
   const resolveExactAddress = await call(
     "resolve_exact_address",
-    "select api_v1.resolve_property(null, $1, false, 10) result",
+    "select api_v1.resolve_property(null, $1, false, 10, 0, 25) result",
     ["1100 15th St NW"],
   );
   const resolveFullPostal = await call(
@@ -197,6 +208,13 @@ try {
       ) &&
       !serializedEvidence.includes("services.arcgis.com") &&
       !serializedEvidence.includes("/_/Retrieve/"),
+    mar_source_evidence:
+      marEvidence?.status === "ok" &&
+      marEvidence?.evidence?.length === 1 &&
+      marEvidence?.sources?.some(
+        (source) => source?.link === "https://mar2.data.dc.gov/",
+      ) &&
+      !JSON.stringify(marEvidence).includes("/rest/services/"),
     invalid_source_evidence:
       invalidEvidence?.status === "invalid_input" &&
       invalidEvidence?.error?.code === "malformed_source_ref",

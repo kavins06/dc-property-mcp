@@ -239,6 +239,11 @@ try {
     join meta.source_release r
       on r.source_id = s.source_id and r.release_key = s.release_key;
   `);
+  await client.query(`
+    analyze core.mar_address_current;
+    analyze core.mar_address_ssl_current;
+    analyze core.mar_residential_unit_current;
+  `);
 
   for (const [sourceId, releaseId] of releaseIdBySource) {
     const previous = previousBySource.get(sourceId);
