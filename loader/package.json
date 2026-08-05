@@ -8,6 +8,7 @@
   },
   "scripts": {
     "bind:core-artifact": "node bind-core-artifact.mjs",
+    "load:mar": "node load-mar.mjs",
     "load:regulatory": "node load-regulatory.mjs",
     "purge:regulatory-batch": "node purge-regulatory-batch.mjs",
     "test": "node --test *.test.mjs"
