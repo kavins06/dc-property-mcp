@@ -198,6 +198,18 @@ const regulatoryTools = new Set([
   "get_inspection_and_enforcement_history",
   "get_building_and_land_profile",
 ]);
+const sourcedTools = new Set([
+  "get_complete_property_record",
+  "get_property_snapshot",
+  "get_assessment_history",
+  "get_tax_and_balance_history",
+  "get_ownership_and_sale",
+  "get_latest_sale_and_deed",
+  "get_permit_history",
+  "get_license_history",
+  "get_inspection_and_enforcement_history",
+  "get_building_and_land_profile",
+]);
 const probes = [
   ["resolve_property", { ssl: "01070075" }],
   [
@@ -276,6 +288,15 @@ try {
     statuses[name] = payload.status;
     if (!["resolved", "ok"].includes(payload.status)) {
       throw new Error(`${name} returned unexpected status ${payload.status}`);
+    }
+    if (
+      sourcedTools.has(name) &&
+      (!Array.isArray(payload.provenance) ||
+        !payload.provenance.length ||
+        !Array.isArray(payload.sources) ||
+        !payload.sources.length)
+    ) {
+      throw new Error(`${name} did not return visible source provenance.`);
     }
     if (
       regulatoryTools.has(name) &&

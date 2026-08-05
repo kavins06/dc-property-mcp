@@ -103,6 +103,43 @@ function sourceRouteIdentity(source: unknown): string {
   );
 }
 
+function sourceRecordIdentity(sourceRef: string): string {
+  const parts = sourceRef.split("|");
+  if (parts.length === 6) {
+    return [parts[0], parts[1], parts[2], parts[5]].join("|");
+  }
+  if (parts.length === 4) {
+    return [parts[0], parts[1], parts[3]].join("|");
+  }
+  return sourceRef;
+}
+
+function compactProvenance(
+  evidence: Record<string, unknown>,
+  sourceRef: string,
+): Record<string, unknown> {
+  const parts = sourceRef.split("|");
+  const release = isRecord(evidence.provenance) ? evidence.provenance : {};
+  const propertyLink = isRecord(evidence.property_link)
+    ? evidence.property_link
+    : {};
+  const fieldKey = evidence.field_key;
+  return Object.fromEntries(
+    Object.entries({
+      source_id: release.source_id ?? parts[0],
+      source_release_id: release.source_release_id,
+      source_record_id:
+        release.source_record_id ?? (parts.length === 6 ? parts[2] : parts[1]),
+      publisher: evidence.publisher,
+      dataset_name: evidence.dataset_name,
+      source_class: evidence.source_class,
+      ...release,
+      property_link_scope: propertyLink.scope ?? "exact_property",
+      covered_fields: typeof fieldKey === "string" ? [fieldKey] : [],
+    }).filter(([, value]) => value !== undefined),
+  );
+}
+
 function mergeSourceDetails(
   target: Record<string, unknown>,
   source: Record<string, unknown>,
@@ -140,7 +177,7 @@ export function mergeSourceEvidence(responses: readonly unknown[]): {
 } {
   const provenance: unknown[] = [];
   const sources: unknown[] = [];
-  const evidenceRefs = new Set<string>();
+  const provenanceByIdentity = new Map<string, Record<string, unknown>>();
   const sourceIdentities = new Set<string>();
   const sourceByIdentity = new Map<string, unknown>();
 
@@ -149,13 +186,19 @@ export function mergeSourceEvidence(responses: readonly unknown[]): {
     if (Array.isArray(response.evidence)) {
       for (const item of response.evidence) {
         const sourceRef = isRecord(item) ? item.source_ref : undefined;
-        if (
-          typeof sourceRef === "string" &&
-          sourceRef.trim() &&
-          !evidenceRefs.has(sourceRef)
+        if (typeof sourceRef !== "string" || !sourceRef.trim()) continue;
+        const identity = sourceRecordIdentity(sourceRef);
+        const existing = provenanceByIdentity.get(identity);
+        if (!existing) {
+          const compact = compactProvenance(item, sourceRef);
+          provenanceByIdentity.set(identity, compact);
+          provenance.push(compact);
+        } else if (
+          typeof item.field_key === "string" &&
+          Array.isArray(existing.covered_fields) &&
+          !existing.covered_fields.includes(item.field_key)
         ) {
-          evidenceRefs.add(sourceRef);
-          provenance.push(item);
+          existing.covered_fields.push(item.field_key);
         }
       }
     }
@@ -283,8 +326,18 @@ export async function callApi(
           !isRecord(evidence) ||
           evidence.status !== "ok" ||
           !Array.isArray(evidence.evidence) ||
-          !Array.isArray(evidence.sources) ||
-          !evidence.evidence.length ||
+          !Array.isArray(evidence.sources)
+        ) {
+          return provenanceUnavailable();
+        }
+        const evidenceItems = evidence.evidence;
+        if (
+          evidenceItems.length !== chunk.length ||
+          !chunk.every((sourceRef) =>
+            evidenceItems.some(
+              (item) => isRecord(item) && item.source_ref === sourceRef,
+            ),
+          ) ||
           !evidence.sources.length
         ) {
           return provenanceUnavailable();
