@@ -3,7 +3,7 @@ import { z } from "zod";
 import { callApi } from "./db";
 import type { Env } from "./types";
 
-export const SERVICE_VERSION = "0.4.5";
+export const SERVICE_VERSION = "0.4.6";
 export const MAX_TOOL_RESPONSE_BYTES = 768 * 1024;
 
 // McpServer output validation requires an object schema. A Zod record is not
@@ -70,22 +70,26 @@ export function createServer(env: Env): McpServer {
     "resolve_property",
     {
       description:
-        "Use first for one SSL or address. Exact matches win; otherwise returns explicitly labeled, scored fuzzy suggestions. Never returns collateral facts for an unresolved identity.",
+        "Use first for one SSL or address. Exact address matches include all official MAR parcel accounts, paginated with parcel_offset and parcel_limit. Exact matches win; otherwise returns explicitly labeled, scored fuzzy suggestions. Never returns collateral facts for an unresolved identity.",
       inputSchema: {
         ...propertyInput,
         include_deleted: z.boolean().default(false),
         limit: z.number().int().min(1).max(10).default(10),
+        parcel_offset: z.number().int().min(0).default(0),
+        parcel_limit: z.number().int().min(1).max(100).default(25),
       },
       outputSchema: resultSchema,
       annotations: READ_ONLY_ANNOTATIONS,
     },
-    async ({ ssl, address, include_deleted, limit }) =>
+    async ({ ssl, address, include_deleted, limit, parcel_offset, parcel_limit }) =>
       toolResult(
         await callApi(env, "resolve_property", [
           ssl ?? null,
           address ?? null,
           include_deleted,
           limit,
+          parcel_offset,
+          parcel_limit,
         ]),
       ),
   );

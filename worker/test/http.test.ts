@@ -32,7 +32,7 @@ describe("HTTP boundary", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       service: "dc-property-mcp",
-      version: "0.4.5",
+      version: "0.4.6",
     });
     expect(response.headers.get("x-request-id")).toBeTruthy();
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");

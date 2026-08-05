@@ -33,6 +33,28 @@ afterEach(() => {
 });
 
 describe("JSONB tool arguments", () => {
+  it("passes parcel pagination to property resolution", async () => {
+    const { client, env, server } = await connectedClient();
+    try {
+      await client.callTool({
+        name: "resolve_property",
+        arguments: {
+          address: "555 12th St NW",
+          parcel_offset: 25,
+          parcel_limit: 50,
+        },
+      });
+      expect(mockedCallApi).toHaveBeenCalledWith(
+        env,
+        "resolve_property",
+        [null, "555 12th St NW", false, 10, 25, 50],
+      );
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  });
+
   it("routes complete-record requests through the exhaustive query", async () => {
     const { client, env, server } = await connectedClient();
     try {
