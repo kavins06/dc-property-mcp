@@ -1,0 +1,112 @@
+{
+  "receipt_kind": "dc-property-s3-archive",
+  "receipt_version": 1,
+  "provider": "hetzner_object_storage",
+  "endpoint": "https://fsn1.your-objectstorage.com",
+  "region": "fsn1",
+  "bucket": "quoindata",
+  "prefix": "dc-property/mar/20260805",
+  "files": [
+    {
+      "relative_path": "data/parcel/raw/mar-20260805b/mar_address_current.jsonl.gz",
+      "bytes": 2442922,
+      "sha256": "6407efda516d709b2e2b25ba4a7b8a2487c4468c7ced589448d08ac0d9fd5970",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 2442922,
+          "sha256": "6407efda516d709b2e2b25ba4a7b8a2487c4468c7ced589448d08ac0d9fd5970",
+          "object_key": "dc-property/mar/20260805/sha256/6407efda516d709b2e2b25ba4a7b8a2487c4468c7ced589448d08ac0d9fd5970/mar_address_current.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/parcel/raw/mar-20260805b/mar_address_current.manifest.json",
+      "bytes": 11141,
+      "sha256": "50b17d6d681e9e535490d578e127b6aa1f77c796e2fb62fd259ef3afb234799f",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 11141,
+          "sha256": "50b17d6d681e9e535490d578e127b6aa1f77c796e2fb62fd259ef3afb234799f",
+          "object_key": "dc-property/mar/20260805/sha256/50b17d6d681e9e535490d578e127b6aa1f77c796e2fb62fd259ef3afb234799f/mar_address_current.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/parcel/raw/mar-20260805b/mar_address_ssl_current.jsonl.gz",
+      "bytes": 3798452,
+      "sha256": "6d38f2089aa1e90c89d60fb2696ebf64809f4f17524487c071c9490c17d38271",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 3798452,
+          "sha256": "6d38f2089aa1e90c89d60fb2696ebf64809f4f17524487c071c9490c17d38271",
+          "object_key": "dc-property/mar/20260805/sha256/6d38f2089aa1e90c89d60fb2696ebf64809f4f17524487c071c9490c17d38271/mar_address_ssl_current.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/parcel/raw/mar-20260805b/mar_address_ssl_current.manifest.json",
+      "bytes": 4603,
+      "sha256": "b6722b2ddc717ba1183665ceb166bf78699c9f5827e273e4e9362bde3beb3a6b",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4603,
+          "sha256": "b6722b2ddc717ba1183665ceb166bf78699c9f5827e273e4e9362bde3beb3a6b",
+          "object_key": "dc-property/mar/20260805/sha256/b6722b2ddc717ba1183665ceb166bf78699c9f5827e273e4e9362bde3beb3a6b/mar_address_ssl_current.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/parcel/raw/mar-20260805b/mar_residential_unit_current.jsonl.gz",
+      "bytes": 4469522,
+      "sha256": "f22e96a3dcfb2679ed1cdd596bde87b10e1c9a9cf56322cdddcf67fda318c5fe",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 4469522,
+          "sha256": "f22e96a3dcfb2679ed1cdd596bde87b10e1c9a9cf56322cdddcf67fda318c5fe",
+          "object_key": "dc-property/mar/20260805/sha256/f22e96a3dcfb2679ed1cdd596bde87b10e1c9a9cf56322cdddcf67fda318c5fe/mar_residential_unit_current.jsonl.gz"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/parcel/raw/mar-20260805b/mar_residential_unit_current.manifest.json",
+      "bytes": 7434,
+      "sha256": "82bb50dde4e26d89d467e46d308f0199d9bc70cc5817887939fb2f9abd6fce9a",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 7434,
+          "sha256": "82bb50dde4e26d89d467e46d308f0199d9bc70cc5817887939fb2f9abd6fce9a",
+          "object_key": "dc-property/mar/20260805/sha256/82bb50dde4e26d89d467e46d308f0199d9bc70cc5817887939fb2f9abd6fce9a/mar_residential_unit_current.manifest.json"
+        }
+      ]
+    },
+    {
+      "relative_path": "data/parcel/raw/mar-20260805b/run.manifest.json",
+      "bytes": 1253,
+      "sha256": "9a876e6d66f7aea1ad9902b03a201746ac3e85f899c0299deb13a2e452d477cc",
+      "parts": [
+        {
+          "part_number": 1,
+          "byte_offset": 0,
+          "bytes": 1253,
+          "sha256": "9a876e6d66f7aea1ad9902b03a201746ac3e85f899c0299deb13a2e452d477cc",
+          "object_key": "dc-property/mar/20260805/sha256/9a876e6d66f7aea1ad9902b03a201746ac3e85f899c0299deb13a2e452d477cc/run.manifest.json"
+        }
+      ]
+    }
+  ],
+  "archive_id": "0ed9ade346b0e1cd197dcade206d99dc3618e85cec76866d64dbcdb3f5e4dfd1",
+  "status": "verified",
+  "receipt_object_key": "dc-property/mar/20260805/receipts/0ed9ade346b0e1cd197dcade206d99dc3618e85cec76866d64dbcdb3f5e4dfd1.json"
+}

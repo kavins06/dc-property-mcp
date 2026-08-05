@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import io
 import json
+import re
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -45,13 +46,6 @@ def _positive_integer(value: Any, field: str) -> int:
     return int(number)
 
 
-def _required_text(value: Any, field: str) -> str:
-    text = str(value or "").strip()
-    if not text:
-        raise ValueError(f"{field} is required")
-    return text
-
-
 def _ssl(value: Any, *, required: bool) -> str | None:
     values = normalize_ssl_values(value)
     if not values:
@@ -63,11 +57,27 @@ def _ssl(value: Any, *, required: bool) -> str | None:
     return values[0]
 
 
-def normalize_address_row(row: Mapping[str, Any]) -> dict[str, Any]:
+def _official_parcel_id(value: Any) -> str:
+    compact = re.sub(r"[\s-]+", "", str(value or "").strip().upper())
+    if not re.fullmatch(
+        r"(?:\d{7,32}|\d{3,4}[A-Z][A-Z0-9./]{0,28}|"
+        r"(?:RES|PAR|PI)[A-Z0-9./]{1,28})",
+        compact,
+    ):
+        raise ValueError("SSL must be one valid official D.C. parcel identifier")
+    return compact
+
+
+def normalize_address_row(row: Mapping[str, Any]) -> dict[str, Any] | None:
+    source_record_id = _positive_integer(row.get("OBJECTID"), "OBJECTID")
+    mar_id = _positive_integer(row.get("MAR_ID"), "MAR_ID")
+    address = str(row.get("ADDRESS") or "").strip()
+    if not address:
+        return None
     return {
-        "source_record_id": _positive_integer(row.get("OBJECTID"), "OBJECTID"),
-        "mar_id": _positive_integer(row.get("MAR_ID"), "MAR_ID"),
-        "address_source_value": _required_text(row.get("ADDRESS"), "ADDRESS"),
+        "source_record_id": source_record_id,
+        "mar_id": mar_id,
+        "address_source_value": address,
         "status": str(row.get("STATUS") or "").strip() or None,
         "base_ssl_normalized": _ssl(row.get("SSL"), required=False),
     }
@@ -77,7 +87,7 @@ def normalize_address_ssl_row(row: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "source_record_id": _positive_integer(row.get("OBJECTID"), "OBJECTID"),
         "mar_id": _positive_integer(row.get("MARID"), "MARID"),
-        "ssl_normalized": _ssl(row.get("SSL"), required=True),
+        "ssl_normalized": _official_parcel_id(row.get("SSL")),
         "square": str(row.get("SQUARE") or "").strip() or None,
         "suffix": str(row.get("SUFFIX") or "").strip() or None,
         "lot": str(row.get("LOT") or "").strip() or None,
@@ -88,16 +98,21 @@ def normalize_address_ssl_row(row: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def normalize_residential_unit_row(row: Mapping[str, Any]) -> dict[str, Any]:
+def normalize_residential_unit_row(row: Mapping[str, Any]) -> dict[str, Any] | None:
+    source_record_id = _positive_integer(row.get("OBJECTID"), "OBJECTID")
+    mar_id = _positive_integer(row.get("MAR_ID"), "MAR_ID")
+    full_address = str(row.get("FULL_ADDRESS") or "").strip()
+    primary_address = str(row.get("PRIMARY_ADDRESS") or "").strip()
+    unit_number = str(row.get("UNIT_NUMBER") or "").strip()
+    if not full_address or not primary_address or not unit_number:
+        return None
     return {
-        "source_record_id": _positive_integer(row.get("OBJECTID"), "OBJECTID"),
+        "source_record_id": source_record_id,
         "unit_id": _positive_integer(row.get("UNIT_ID"), "UNIT_ID"),
-        "mar_id": _positive_integer(row.get("MAR_ID"), "MAR_ID"),
-        "full_address": _required_text(row.get("FULL_ADDRESS"), "FULL_ADDRESS"),
-        "primary_address": _required_text(
-            row.get("PRIMARY_ADDRESS"), "PRIMARY_ADDRESS"
-        ),
-        "unit_number": _required_text(row.get("UNIT_NUMBER"), "UNIT_NUMBER"),
+        "mar_id": mar_id,
+        "full_address": full_address,
+        "primary_address": primary_address,
+        "unit_number": unit_number,
         "unit_type": str(row.get("UNIT_TYPE") or "").strip() or None,
         "condo_ssl_normalized": _ssl(row.get("CONDO_SSL"), required=False),
         "status": str(row.get("STATUS") or "").strip() or None,
@@ -168,10 +183,14 @@ def _load_source(
 
     release_key = f"arcgis-{manifest['artifact']['gzip_sha256']}"
     by_key: dict[tuple[Any, ...], dict[str, Any]] = {}
+    excluded_rows = 0
     with gzip.open(data_path, "rt", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, 1):
             raw = json.loads(line)
             normalized = normalizer(raw)
+            if normalized is None:
+                excluded_rows += 1
+                continue
             normalized.update({
                 "source_id": source_id,
                 "release_key": release_key,
@@ -183,10 +202,16 @@ def _load_source(
                 by_key[key] = normalized
             elif {
                 field: value for field, value in prior.items()
-                if field not in {"source_record_id", "source_row_sha256"}
+                if field not in {
+                    "source_record_id", "source_row_sha256", "square", "suffix",
+                    "lot", "common_ownership_lot", "parcel", "reservation",
+                }
             } != {
                 field: value for field, value in normalized.items()
-                if field not in {"source_record_id", "source_row_sha256"}
+                if field not in {
+                    "source_record_id", "source_row_sha256", "square", "suffix",
+                    "lot", "common_ownership_lot", "parcel", "reservation",
+                }
             }:
                 raise ValueError(
                     f"Conflicting duplicate {source_id} key {key} at row {line_number}"
@@ -204,6 +229,7 @@ def _load_source(
         "gzip_sha256": manifest["artifact"]["gzip_sha256"],
         "canonical_rows_sha256": manifest["artifact"]["canonical_rows_sha256"],
         "schema_sha256": manifest["arcgis"]["schema_fingerprint"],
+        "excluded_rows": excluded_rows,
         "source": manifest["source"],
     }
     return rows, release

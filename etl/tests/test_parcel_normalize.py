@@ -92,6 +92,15 @@ class ParcelSourceContractTests(unittest.TestCase):
             },
         )
 
+    def test_address_rows_without_a_human_address_are_excluded(self) -> None:
+        self.assertIsNone(normalize_address_row({
+            "OBJECTID": 1,
+            "MAR_ID": 2,
+            "ADDRESS": None,
+            "STATUS": "ACTIVE",
+            "SSL": "0001    0001",
+        }))
+
     def test_address_ssl_row_preserves_lot_classification(self) -> None:
         self.assertEqual(
             normalize_address_ssl_row(
@@ -111,6 +120,26 @@ class ParcelSourceContractTests(unittest.TestCase):
             "TAX LOT",
         )
 
+    def test_address_ssl_preserves_official_non_tax_lot_identifiers(self) -> None:
+        self.assertEqual(
+            normalize_address_ssl_row({
+                "OBJECTID": 21,
+                "MARID": 123,
+                "SSL": "1065NE  0044",
+                "LOT_TYPE": "RECORD LOT",
+            })["ssl_normalized"],
+            "1065NE0044",
+        )
+        self.assertEqual(
+            normalize_address_ssl_row({
+                "OBJECTID": 22,
+                "MARID": 123,
+                "SSL": "RES 343B0000",
+                "LOT_TYPE": "RESERVATION",
+            })["ssl_normalized"],
+            "RES343B0000",
+        )
+
     def test_unit_row_narrows_only_with_an_official_condo_ssl(self) -> None:
         row = normalize_residential_unit_row(
             {
@@ -127,6 +156,17 @@ class ParcelSourceContractTests(unittest.TestCase):
         )
         self.assertEqual(row["condo_ssl_normalized"], "00012004")
         self.assertEqual(row["unit_number"], "4")
+
+    def test_unit_rows_without_searchable_addresses_are_excluded(self) -> None:
+        self.assertIsNone(normalize_residential_unit_row({
+            "OBJECTID": 30,
+            "UNIT_ID": 0,
+            "MAR_ID": 123,
+            "FULL_ADDRESS": None,
+            "PRIMARY_ADDRESS": "1 TEST STREET NW",
+            "UNIT_NUMBER": "4",
+            "STATUS": "RETIRE",
+        }))
 
     def test_malformed_official_identifiers_fail_closed(self) -> None:
         with self.assertRaisesRegex(ValueError, "MAR_ID"):

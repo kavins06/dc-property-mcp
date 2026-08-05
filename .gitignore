@@ -14,3 +14,4 @@ node_modules/
 worker/dist/
 /application-backups/
 /data/regulatory/
+/data/parcel/
