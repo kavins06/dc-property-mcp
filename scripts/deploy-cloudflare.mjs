@@ -6,9 +6,10 @@ import { verifyLive } from "./verify-live.mjs";
 
 const project = resolve(import.meta.dirname, "..");
 
-const env = parseEnv(
-  readFileSync(resolve(project, ".env.hosted"), "utf8"),
-);
+const env = {
+  ...parseEnv(readFileSync(resolve(project, ".env.hosted"), "utf8")),
+  ...process.env,
+};
 const config = JSON.parse(
   readFileSync(resolve(project, "worker", "wrangler.jsonc"), "utf8"),
 );
