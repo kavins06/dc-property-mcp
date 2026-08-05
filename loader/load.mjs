@@ -188,6 +188,7 @@ try {
     "db/migrations/0025_mytax_source_route.sql",
     "db/migrations/0026_capitol_address_resolution.sql",
     "db/migrations/0027_complete_property_record.sql",
+    "db/migrations/0028_tax_assessment_human_sources.sql",
   ]) {
     await applySql(client, migration);
   }
