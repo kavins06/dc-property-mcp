@@ -189,6 +189,7 @@ try {
     "db/migrations/0026_capitol_address_resolution.sql",
     "db/migrations/0027_complete_property_record.sql",
     "db/migrations/0028_tax_assessment_human_sources.sql",
+    "db/migrations/0029_mytax_cookie_bootstrap.sql",
   ]) {
     await applySql(client, migration);
   }
