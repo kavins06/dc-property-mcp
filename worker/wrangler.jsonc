@@ -14,7 +14,7 @@
     "WORKOS_AUTHKIT_DOMAIN": "ripe-theater-06.authkit.app",
     "WORKOS_RESOURCE_URI": "https://dc-property-mcp.quoindata.com/mcp",
     "ALLOWED_ORIGINS": "",
-    "BILLING_ENFORCEMENT": "shadow",
+    "BILLING_ENFORCEMENT": "on",
     "BILLING_ACCOUNT_URL": "https://quoindata.com/account"
   },
   "hyperdrive": [
