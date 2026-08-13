@@ -13,13 +13,22 @@
   "vars": {
     "WORKOS_AUTHKIT_DOMAIN": "ripe-theater-06.authkit.app",
     "WORKOS_RESOURCE_URI": "https://dc-property-mcp.quoindata.com/mcp",
-    "ALLOWED_ORIGINS": ""
+    "ALLOWED_ORIGINS": "",
+    "BILLING_ENFORCEMENT": "shadow",
+    "BILLING_ACCOUNT_URL": "https://quoindata.com/account"
   },
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
       "id": "5fd47b059f824188998ad4ce9dc4503c",
       "localConnectionString": "postgresql://mcp_runtime:local@127.0.0.1:5432/dc_property"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "BILLING_DB",
+      "database_name": "quoin-billing-production",
+      "database_id": "8dd29294-62b2-4edc-b483-c7064260f8d0"
     }
   ],
   "ratelimits": [
