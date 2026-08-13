@@ -1,5 +1,6 @@
 import { authenticate, protectedResourceMetadata, unauthorized } from "./auth";
 import { createServer, SERVICE_VERSION } from "./server";
+import { checkEntitlement } from "./entitlement";
 import type { Env } from "./types";
 
 const MAX_MCP_REQUEST_BYTES = 128 * 1024;
@@ -232,6 +233,23 @@ async function handleRequest(
     return unauthorized(request, env);
   }
   if (!subject) return unauthorized(request, env);
+
+  const entitlement = await checkEntitlement(subject.sub, env);
+  if (!entitlement.allowed) {
+    if (entitlement.unavailable) {
+      return Response.json(
+        { error: "service_unavailable" },
+        { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "5" } },
+      );
+    }
+    return Response.json(
+      {
+        error: "subscription_required",
+        action_url: env.BILLING_ACCOUNT_URL ?? "https://quoindata.com/pricing",
+      },
+      { status: 403, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 
   const rateKey = await crypto.subtle.digest(
     "SHA-256",
