@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.kavins06/dc-property-records",
+  "title": "D.C. Property Records by Quoin Data",
+  "description": "Source-linked Washington, D.C. property-account records for authenticated MCP clients.",
+  "version": "0.4.6",
+  "repository": {
+    "url": "https://github.com/kavins06/dc-property-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://dc-property-mcp.quoindata.com/mcp"
+    }
+  ]
+}

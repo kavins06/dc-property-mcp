@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.6 — 2026-08-05
+
+- Added MAR parcel-set evidence to exact address resolution, preserving
+  explicit ambiguity when one official address maps to multiple parcels.
+- Added exact residential-unit narrowing when D.C. publishes a condominium
+  parcel account for the unit.
+- Kept the public catalog at 15 read-only tools; no Recorder tool is exposed.
+
 ## 0.4.5 — 2026-08-05
 
 - Added display-ready official human sources and developer-facing provenance

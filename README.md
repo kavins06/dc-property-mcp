@@ -1,6 +1,7 @@
 # D.C. Property Records MCP
 
-Read-only, lender-oriented Washington, D.C. property-account data service.
+Quoin Data's read-only, source-linked Washington, D.C. property-account data
+service for MCP clients.
 
 The project builds:
 
@@ -24,6 +25,11 @@ The production MCP endpoint is:
 ```text
 https://dc-property-mcp.quoindata.com/mcp
 ```
+
+The remote MCP is available now. Add that Streamable HTTP URL to a compatible
+MCP client and complete the WorkOS OAuth sign-in flow; no API key is required
+for MCP authorization. This endpoint is not a consumer-facing REST API.
+Consumer-facing API access is by request.
 
 It is deployed on Cloudflare Workers with a custom domain, Hyperdrive, two
 rate-limit bindings, and WorkOS AuthKit OAuth. The WorkOS production
@@ -57,6 +63,41 @@ The MCP exposes 15 read-only tools:
   `get_inspection_and_enforcement_history`, and
   `get_building_and_land_profile`
 - evidence and semantic guidance: `get_source_evidence` and `describe_data`
+
+### Tool input contract
+
+All property detail tools accept an optional `ssl` (1–32 characters) or
+`address` (2–160 characters). Resolve identity first when the intended account
+is not already certain. The server advertises these exact bounded inputs:
+
+| Tool | Additional input and limits |
+| --- | --- |
+| `resolve_property` | `include_deleted` defaults to `false`; `limit` 1–10 (default 10); `parcel_offset` 0 or greater (default 0); `parcel_limit` 1–100 (default 25) |
+| `resolve_properties_batch` | 1–50 named `items`; each needs `client_id` (1–100 characters) and an `ssl` or `address` |
+| `search_properties` | Allowlisted filters and sorts only; `cursor` at most 128 characters; `limit` 1–50 (default 20) |
+| `get_complete_property_record` | Property input only; follow every returned continuation when `coverage.complete` is false |
+| `get_property_snapshot` | Property input only |
+| `get_assessment_history` | Property input only |
+| `get_tax_and_balance_history` | Property input only |
+| `get_ownership_and_sale` | Property input only |
+| `get_latest_sale_and_deed` | Property input only |
+| `get_permit_history` | Property input plus optional `cursor` up to 512 characters and `limit` 1–50 (default 20) |
+| `get_license_history` | Property input plus optional `cursor` up to 512 characters and `limit` 1–50 (default 20) |
+| `get_inspection_and_enforcement_history` | Property input plus optional `cursor` up to 512 characters and `limit` 1–50 (default 20) |
+| `get_building_and_land_profile` | Property input plus optional `cursor` up to 512 characters and `limit` 1–50 (default 20) |
+| `get_source_evidence` | 1–50 `source_refs`, each 1–192 characters |
+| `describe_data` | Optional `question`, at most 500 characters |
+
+The runtime schemas in [`worker/src/server.ts`](worker/src/server.ts) are
+authoritative. All 15 tools carry read-only, non-destructive, idempotent
+annotations. Responses are bounded to 768 KiB; page through returned cursors
+instead of requesting an unbounded export.
+
+`search_properties` accepts only `ward`, `property_type`, `use_code`,
+`tax_class`, assessment bounds, balance filters, tax-sale status, sale-date
+bounds, and the documented cursor and limit. Sorts are limited to assessment,
+balance, sale date, address, or account ID in the directions encoded by the
+runtime schema; account ID ascending is the default.
 
 The four regulatory tools preserve the publishing agency, record type, and
 property-link scope. Only SSL-derived links are exact property facts.
@@ -126,7 +167,7 @@ $env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
 node ..\scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node --env-file=..\.env.hosted ..\scripts\promote-cloudflare.mjs
-node ..\scripts\verify-live.mjs 0.4.3
+node ..\scripts\verify-live.mjs 0.4.6
 node ..\scripts\verify-authenticated-mcp.mjs
 ```
 
@@ -162,3 +203,11 @@ archiving provide recurring physical/PITR coverage in Hetzner Object Storage.
 
 Operational thresholds, incident steps, and rollback procedures are in
 `docs/operations-runbook.md`.
+
+## Registry metadata
+
+[`server.json`](server.json) is a registry-ready description of the hosted
+Streamable HTTP server. It follows the official MCP Registry schema and tracks
+the Worker service version. Preparing this artifact does not publish the server
+or change its OAuth requirements. See the official
+[remote-server registry documentation](https://modelcontextprotocol.io/registry/remote-servers).

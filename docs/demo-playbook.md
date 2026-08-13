@@ -7,7 +7,7 @@ playbook defines checks, not substitute property facts.
 ## Preflight
 
 ```powershell
-node scripts\verify-live.mjs 0.4.3
+node scripts\verify-live.mjs 0.4.6
 node --env-file=.env.hosted scripts\verify-runtime.mjs
 python scripts\check_evidence.py
 node scripts\verify-authenticated-mcp.mjs
