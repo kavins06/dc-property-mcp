@@ -15,6 +15,18 @@ describe("MCP tool catalog", () => {
       client.connect(clientTransport),
     ]);
     try {
+      expect(client.getServerVersion()).toMatchObject({
+        name: "dc-property-records",
+        title: "Quoin Data — D.C. Property Records",
+        version: "0.4.8",
+        icons: [
+          {
+            src: "https://quoindata.com/assets/mcp-logo.png",
+            mimeType: "image/png",
+            sizes: ["1179x1179"],
+          },
+        ],
+      });
       const response = await client.listTools();
       expect(response.tools.map((tool) => tool.name).sort()).toEqual([
         "describe_data",
@@ -53,7 +65,7 @@ describe("MCP tool catalog", () => {
       expect(response.tools.every((tool) => tool.annotations?.readOnlyHint)).toBe(
         true,
       );
-      expect(SERVICE_VERSION).toBe("0.4.7");
+      expect(SERVICE_VERSION).toBe("0.4.8");
     } finally {
       await client.close();
       await server.close();

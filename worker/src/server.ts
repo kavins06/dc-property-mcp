@@ -3,7 +3,7 @@ import { z } from "zod";
 import { callApi } from "./db";
 import type { Env } from "./types";
 
-export const SERVICE_VERSION = "0.4.7";
+export const SERVICE_VERSION = "0.4.8";
 export const MAX_TOOL_RESPONSE_BYTES = 768 * 1024;
 
 // McpServer output validation requires an object schema. A Zod record is not
@@ -49,7 +49,20 @@ function toolResult(result: Record<string, unknown>) {
 
 export function createServer(env: Env): McpServer {
   const server = new McpServer(
-    { name: "dc-property-records", version: SERVICE_VERSION },
+    {
+      name: "dc-property-records",
+      title: "Quoin Data — D.C. Property Records",
+      version: SERVICE_VERSION,
+      description: "Source-linked Washington, D.C. property-account records.",
+      websiteUrl: "https://quoindata.com/mcp",
+      icons: [
+        {
+          src: "https://quoindata.com/assets/mcp-logo.png",
+          mimeType: "image/png",
+          sizes: ["1179x1179"],
+        },
+      ],
+    },
     {
       instructions:
         "Read-only public D.C. property-account facts for commercial-real-estate lending. " +

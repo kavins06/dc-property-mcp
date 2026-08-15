@@ -4,7 +4,7 @@ import test from "node:test";
 
 const root = new URL("../../", import.meta.url);
 
-test("public README and registry metadata match the v0.4.7 MCP contract", async () => {
+test("public README and registry metadata match the v0.4.8 MCP contract", async () => {
   const [readme, registryText, workerPackageText] = await Promise.all([
     readFile(new URL("README.md", root), "utf8"),
     readFile(new URL("server.json", root), "utf8"),
@@ -40,6 +40,12 @@ test("public README and registry metadata match the v0.4.7 MCP contract", async 
   assert.equal(registry.$schema, "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json");
   assert.equal(registry.name, "io.github.kavins06/dc-property-records");
   assert.equal(registry.version, workerPackage.version);
+  assert.deepEqual(registry.icons, [{
+    src: "https://quoindata.com/assets/mcp-logo.png",
+    mimeType: "image/png",
+    sizes: ["1179x1179"],
+  }]);
+  assert.equal(registry.websiteUrl, "https://quoindata.com/mcp");
   assert.deepEqual(registry.remotes, [{
     type: "streamable-http",
     url: "https://mcp.quoindata.com/mcp",

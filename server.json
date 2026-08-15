@@ -3,7 +3,15 @@
   "name": "io.github.kavins06/dc-property-records",
   "title": "D.C. Property Records by Quoin Data",
   "description": "Source-linked Washington, D.C. property-account records for authenticated MCP clients.",
-  "version": "0.4.7",
+  "version": "0.4.8",
+  "websiteUrl": "https://quoindata.com/mcp",
+  "icons": [
+    {
+      "src": "https://quoindata.com/assets/mcp-logo.png",
+      "mimeType": "image/png",
+      "sizes": ["1179x1179"]
+    }
+  ],
   "repository": {
     "url": "https://github.com/kavins06/dc-property-mcp",
     "source": "github"

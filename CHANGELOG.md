@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.8 — 2026-08-14
+
+- Added the Quoin Data connector logo and human-readable identity metadata to
+  MCP initialization and public registry discovery.
+
 ## 0.4.7 — 2026-08-14
 
 - Moved the permanent production connector endpoint to
