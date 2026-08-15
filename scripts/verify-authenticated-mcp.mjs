@@ -169,6 +169,37 @@ async function connect(targetUrl, targetClient, allowAuthorization) {
   }
 }
 
+async function authorizeWithoutInitializing(targetUrl, targetClient) {
+  const transport = new StreamableHTTPClientTransport(targetUrl, {
+    authProvider: provider,
+    fetch: loggingFetch,
+  });
+  try {
+    await targetClient.connect(transport);
+    return transport;
+  } catch (error) {
+    if (!(error instanceof UnauthorizedError)) throw error;
+    await authorizationUrlPromise;
+    let callbackTimeout;
+    const code = await Promise.race([
+      callbackPromise,
+      new Promise((_, reject) => {
+        callbackTimeout = setTimeout(
+          () =>
+            reject(
+              new Error(
+                `OAuth callback timed out after ${callbackTimeoutSeconds} seconds.`,
+              ),
+            ),
+          callbackTimeoutSeconds * 1000,
+        );
+      }),
+    ]).finally(() => clearTimeout(callbackTimeout));
+    await transport.finishAuth(code);
+    return transport;
+  }
+}
+
 function structured(result) {
   if (result.structuredContent) return result.structuredContent;
   const text = result.content?.find((item) => item.type === "text")?.text;
@@ -261,7 +292,7 @@ try {
       { name: "quoin-release-auth-bootstrap", version: serviceVersion },
       { capabilities: {} },
     );
-    authTransport = await connect(authServerUrl, authClient, true);
+    authTransport = await authorizeWithoutInitializing(authServerUrl, authClient);
   }
   transport = await connect(
     serverUrl,
