@@ -307,6 +307,17 @@ try {
       `Live tool catalog mismatch: ${toolNames.join(", ")}`,
     );
   }
+  for (const tool of catalog.tools) {
+    if (!tool.title?.trim() || !tool.description?.trim()) {
+      throw new Error(`${tool.name} is missing a title or description.`);
+    }
+    if (
+      tool.annotations?.readOnlyHint !== true ||
+      tool.annotations?.destructiveHint !== false
+    ) {
+      throw new Error(`${tool.name} is missing required safety annotations.`);
+    }
+  }
 
   const timings = {};
   const statuses = {};
@@ -387,6 +398,7 @@ try {
     endpoint: serverUrl.toString(),
     authorization_resource: authServerUrl.toString(),
     tool_count: toolNames.length,
+    tool_metadata_validated: true,
     tools: toolNames,
     statuses,
     timings_ms: timings,
