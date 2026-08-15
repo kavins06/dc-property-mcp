@@ -3,7 +3,7 @@ import { z } from "zod";
 import { callApi } from "./db";
 import type { Env } from "./types";
 
-export const SERVICE_VERSION = "0.4.8";
+export const SERVICE_VERSION = "0.4.9";
 export const MAX_TOOL_RESPONSE_BYTES = 768 * 1024;
 
 // McpServer output validation requires an object schema. A Zod record is not
@@ -82,6 +82,7 @@ export function createServer(env: Env): McpServer {
   server.registerTool(
     "resolve_property",
     {
+      title: "Resolve Property",
       description:
         "Use first for one SSL or address. Exact address matches include all official MAR parcel accounts, paginated with parcel_offset and parcel_limit. Exact matches win; otherwise returns explicitly labeled, scored fuzzy suggestions. Never returns collateral facts for an unresolved identity.",
       inputSchema: {
@@ -110,6 +111,7 @@ export function createServer(env: Env): McpServer {
   server.registerTool(
     "get_complete_property_record",
     {
+      title: "Get Complete Property Record",
       description:
         "Use whenever the user asks for all data, everything available, a complete record, a full property report, or the entire record for one property. Resolves identity and returns all nine property-data sections: snapshot, assessments, tax/balance history, ownership, sales/deed history, permits, licenses, inspections/enforcement, and building/land context. Check coverage.complete; follow every named continuation when false. Do not substitute a single domain tool for a complete-record request.",
       inputSchema: propertyInput,
@@ -128,6 +130,7 @@ export function createServer(env: Env): McpServer {
   server.registerTool(
     "resolve_properties_batch",
     {
+      title: "Resolve Properties Batch",
       description:
         "Resolve 1–50 caller-supplied named assets for a portfolio tape. Returns one result per client_id in input order; this is bounded lookup, not bulk export.",
       inputSchema: {
@@ -155,30 +158,35 @@ export function createServer(env: Env): McpServer {
   const propertyTools = [
     {
       name: "get_property_snapshot",
+      title: "Get Property Snapshot",
       description:
         "Use for a lender-oriented collateral quick look: identity, decoded classification, owner of record, assessments, taxes/balances, special assessments, quality flags, and a slim latest-transfer summary.",
       db: "get_property_snapshot",
     },
     {
       name: "get_assessment_history",
+      title: "Get Assessment History",
       description:
         "Use for the current official assessment sequence: tax year 2025 prior, tax year 2026 current, and tax year 2027 proposed. These stages are distinct, and assessed value is not an appraisal or lending value.",
       db: "get_assessment_history",
     },
     {
       name: "get_tax_and_balance_history",
+      title: "Get Tax and Balance History",
       description:
         "Use for annual tax, raw tax-account slots, amounts due/collected, balances, penalties, interest, fees, credits, and tax-sale flags. Does not infer unsupported annual aggregation.",
       db: "get_tax_and_balance_history",
     },
     {
       name: "get_ownership_and_sale",
+      title: "Get Ownership and Sale",
       description:
         "Use for current owner and mailing data with source-preserving quality flags. Sale history is intentionally returned by get_latest_sale_and_deed to avoid duplicate payloads.",
       db: "get_ownership_and_sale",
     },
     {
       name: "get_latest_sale_and_deed",
+      title: "Get Latest Sale and Deed",
       description:
         "Use for official CAMA sale history plus the latest assessor-reported deed fields. It is not a Recorder chain of title, lien search, or title report.",
       db: "get_latest_sale_and_deed",
@@ -189,6 +197,7 @@ export function createServer(env: Env): McpServer {
     server.registerTool(
       tool.name,
       {
+        title: tool.title,
         description: tool.description,
         inputSchema: propertyInput,
         outputSchema: resultSchema,
@@ -207,24 +216,28 @@ export function createServer(env: Env): McpServer {
   const regulatoryTools = [
     {
       name: "get_permit_history",
+      title: "Get Permit History",
       description:
         "Use for official building permit history, certificate of occupancy records, and DDOT public-space permit records associated with a resolved property. Record types and property-link scope stay explicit.",
       db: "get_permit_history",
     },
     {
       name: "get_license_history",
+      title: "Get License History",
       description:
         "Use for official business and occupational licenses associated with the reported premise. A premise match is context only; it is not proof of ownership or title.",
       db: "get_license_history",
     },
     {
       name: "get_inspection_and_enforcement_history",
+      title: "Get Inspection and Enforcement History",
       description:
         "Use for official inspection history and enforcement or violation context associated with a resolved property. Agency, record type, and property-link scope stay explicit.",
       db: "get_inspection_and_enforcement_history",
     },
     {
       name: "get_building_and_land_profile",
+      title: "Get Building and Land Profile",
       description:
         "Use for official CAMA building characteristics, energy benchmarking, BEPS status, and vacant or blighted property context. Shared-building and proximity records are not exact parcel facts.",
       db: "get_building_and_land_profile",
@@ -235,6 +248,7 @@ export function createServer(env: Env): McpServer {
     server.registerTool(
       tool.name,
       {
+        title: tool.title,
         description: tool.description,
         inputSchema: regulatoryInput,
         outputSchema: resultSchema,
@@ -257,6 +271,7 @@ export function createServer(env: Env): McpServer {
   server.registerTool(
     "search_properties",
     {
+      title: "Search Properties",
       description:
         "Use for bounded lender screening with allowlisted valuation, classification, sale-date, delinquency, balance, and tax-sale filters plus deterministic sorting. No arbitrary SQL, owner-name search, mailing-address output, or bulk export.",
       inputSchema: {
@@ -293,6 +308,7 @@ export function createServer(env: Env): McpServer {
   server.registerTool(
     "get_source_evidence",
     {
+      title: "Get Source Evidence",
       description:
         "Validate fact source references, then return official human-facing D.C. sources with exact lookup inputs and a safe fallback. Present `sources` to users; `evidence` is internal audit data. Does not return ArcGIS REST, JSON, or session-bound URLs.",
       inputSchema: {
@@ -311,6 +327,7 @@ export function createServer(env: Env): McpServer {
   server.registerTool(
     "describe_data",
     {
+      title: "Describe Data",
       description:
         "Ask a data, coverage, code, or filter question. Returns a compact keyword-routed answer, discoverable filter vocabulary, limitations, and the best next tool; it does not invoke an LLM.",
       inputSchema: { question: z.string().max(500).optional() },

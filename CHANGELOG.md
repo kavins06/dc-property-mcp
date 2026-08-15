@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.9 — 2026-08-14
+
+- Added human-readable titles to all 15 MCP tools for directory and client
+  display while preserving names, schemas, behavior, and read-only annotations.
+
 ## 0.4.8 — 2026-08-14
 
 - Added the Quoin Data connector logo and human-readable identity metadata to
