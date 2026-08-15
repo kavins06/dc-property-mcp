@@ -51,6 +51,11 @@ function deploymentBindings() {
       name: binding.binding,
       id: binding.id,
     })),
+    ...(config.d1_databases ?? []).map((binding) => ({
+      type: "d1",
+      name: binding.binding,
+      id: binding.database_id,
+    })),
     ...Object.entries(config.vars ?? {}).map(([name, text]) => ({
       type: "plain_text",
       name,
