@@ -2,11 +2,11 @@
 
 ## Service
 
-- MCP: `https://dc-property-mcp.quoindata.com/mcp`
-- Health: `https://dc-property-mcp.quoindata.com/healthz`
+- MCP: `https://mcp.quoindata.com/mcp`
+- Health: `https://mcp.quoindata.com/healthz`
 - Authentication: WorkOS AuthKit
 - Database: PostgreSQL 18 on Hetzner through Hyperdrive and Workers VPC
-- Contract: v0.4.6, 15 read-only MCP tools
+- Contract: v0.4.7, 15 read-only MCP tools
 
 A healthy unauthenticated MCP request returns `401` with a
 `WWW-Authenticate` link to protected-resource metadata.
@@ -18,7 +18,7 @@ A healthy unauthenticated MCP request returns `401` with a
 - Supabase rollback Hyperdrive: `a9ec4dc6114e4057a11bea66b8fe50b3`
 - Workers VPC service: `019faa01-7a77-7ac3-83c4-40c9439e5499`
 - Cloudflare Tunnel: `279f1681-2ce0-43f8-8c4c-d85ec4bc0a22`
-- WorkOS resource: `https://dc-property-mcp.quoindata.com/mcp`
+- WorkOS resource: `https://mcp.quoindata.com/mcp`
 - Alert destination: `kavins@quoindata.com`
 
 Worker version and deployment IDs are recorded in
@@ -153,11 +153,11 @@ restore after every material schema or backup-format change.
 
 ```powershell
 node scripts\deploy-cloudflare.mjs --stage-only
-$env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
+$env:MCP_AUTH_SERVER_URL="https://mcp.quoindata.com/mcp"
 node scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node scripts\promote-cloudflare.mjs
-node scripts\verify-live.mjs 0.4.6
+node scripts\verify-live.mjs 0.4.7
 node scripts\verify-authenticated-mcp.mjs
 ```
 

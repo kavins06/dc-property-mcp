@@ -12,7 +12,7 @@ function delay(milliseconds) {
 }
 
 export async function verifyLive({
-  baseUrl = "https://dc-property-mcp.quoindata.com",
+  baseUrl = "https://mcp.quoindata.com",
   expectedVersion = packageJson.version,
   expectedResourceUrl = `${baseUrl}/mcp`,
   versionId,

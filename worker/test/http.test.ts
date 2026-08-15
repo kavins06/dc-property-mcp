@@ -32,7 +32,7 @@ describe("HTTP boundary", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       service: "dc-property-mcp",
-      version: "0.4.6",
+      version: "0.4.7",
     });
     expect(response.headers.get("x-request-id")).toBeTruthy();
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
@@ -41,6 +41,20 @@ describe("HTTP boundary", () => {
     );
     expect(response.headers.get("strict-transport-security")).toBe(
       "max-age=31536000",
+    );
+  });
+
+  it("permanently redirects the legacy production hostname", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const response = await worker.fetch(
+      new Request("https://dc-property-mcp.quoindata.com/mcp?client=test"),
+      env,
+      ctx,
+    );
+
+    expect(response.status).toBe(308);
+    expect(response.headers.get("location")).toBe(
+      "https://mcp.example.com/mcp?client=test",
     );
   });
 

@@ -7,7 +7,7 @@ import { UnauthorizedError } from "../worker/node_modules/@modelcontextprotocol/
 import { InMemoryOAuthClientProvider } from "../worker/node_modules/@modelcontextprotocol/sdk/dist/esm/examples/client/simpleOAuthClientProvider.js";
 
 const serverUrl = new URL(
-  process.argv[2] ?? "https://dc-property-mcp.quoindata.com/mcp",
+  process.argv[2] ?? "https://mcp.quoindata.com/mcp",
 );
 const authServerUrl = new URL(
   process.env.MCP_AUTH_SERVER_URL ?? serverUrl,

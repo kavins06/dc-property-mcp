@@ -23,7 +23,7 @@ Git.
 The production MCP endpoint is:
 
 ```text
-https://dc-property-mcp.quoindata.com/mcp
+https://mcp.quoindata.com/mcp
 ```
 
 The remote MCP is available now. Add that Streamable HTTP URL to a compatible
@@ -163,11 +163,11 @@ npm test
 npm run bundle
 npm audit --audit-level=moderate
 node --env-file=..\.env.hosted ..\scripts\deploy-cloudflare.mjs --stage-only
-$env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
+$env:MCP_AUTH_SERVER_URL="https://mcp.quoindata.com/mcp"
 node ..\scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node --env-file=..\.env.hosted ..\scripts\promote-cloudflare.mjs
-node ..\scripts\verify-live.mjs 0.4.6
+node ..\scripts\verify-live.mjs 0.4.7
 node ..\scripts\verify-authenticated-mcp.mjs
 ```
 

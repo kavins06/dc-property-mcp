@@ -4,6 +4,7 @@ import { checkEntitlement } from "./entitlement";
 import type { Env } from "./types";
 
 const MAX_MCP_REQUEST_BYTES = 128 * 1024;
+const LEGACY_PRODUCTION_HOST = "dc-property-mcp.quoindata.com";
 const MCP_ALLOWED_HEADERS = [
   "authorization",
   "content-type",
@@ -195,6 +196,12 @@ async function handleRequest(
   ctx: ExecutionContext,
 ): Promise<Response> {
   const url = new URL(request.url);
+
+  if (url.hostname === LEGACY_PRODUCTION_HOST) {
+    const destination = new URL(request.url);
+    destination.hostname = new URL(env.WORKOS_RESOURCE_URI).hostname;
+    return Response.redirect(destination, 308);
+  }
 
   if (url.pathname === "/healthz") {
     if (!["GET", "HEAD"].includes(request.method)) {

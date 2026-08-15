@@ -25,7 +25,7 @@ certificate with `verify_full`.
 
 The Worker exposes 14 bounded, read-only MCP tools. WorkOS tokens are checked
 for signature, issuer, expiration, and the exact
-`https://dc-property-mcp.quoindata.com/mcp` audience. Hyperdrive connects as
+`https://mcp.quoindata.com/mcp` audience. Hyperdrive connects as
 `mcp_runtime`, which has no direct table privileges and may execute only the
 14 allowlisted `api_v1` functions.
 

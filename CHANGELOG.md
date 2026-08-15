@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.7 — 2026-08-14
+
+- Moved the permanent production connector endpoint to
+  `https://mcp.quoindata.com/mcp`.
+- Kept the former production hostname as an HTTP 308 compatibility redirect.
+
 ## 0.4.6 — 2026-08-05
 
 - Added MAR parcel-set evidence to exact address resolution, preserving

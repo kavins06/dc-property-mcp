@@ -97,7 +97,7 @@ Retain the previous Supabase Hyperdrive ID as the rollback target.
 ## WorkOS
 
 - AuthKit domain: `ripe-theater-06.authkit.app`
-- Resource indicator: `https://dc-property-mcp.quoindata.com/mcp`
+- Resource indicator: `https://mcp.quoindata.com/mcp`
 - CIMD enabled; DCR retained for compatible clients
 
 The Worker validates issuer, JWKS signature, expiration, and exact audience.
@@ -114,11 +114,11 @@ npm audit --audit-level=moderate
 cd ..
 
 node scripts\deploy-cloudflare.mjs --stage-only
-$env:MCP_AUTH_SERVER_URL="https://dc-property-mcp.quoindata.com/mcp"
+$env:MCP_AUTH_SERVER_URL="https://mcp.quoindata.com/mcp"
 node scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node scripts\promote-cloudflare.mjs
-node scripts\verify-live.mjs 0.4.6
+node scripts\verify-live.mjs 0.4.7
 node scripts\verify-authenticated-mcp.mjs
 ```
 
