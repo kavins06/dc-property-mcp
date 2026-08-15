@@ -1,0 +1,260 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "Quoin Data Property Records",
+    "subtitle": "Research DC property records",
+    "description": "Quoin Data helps professionals resolve Washington, DC property accounts and research source-linked ownership, assessments, taxes, sales, permits, licenses, inspections, enforcement, and building records. It supports bounded public-record research and does not make lending, underwriting, appraisal, title, lien-priority, eligibility, or zoning-compliance decisions.",
+    "category": "BUSINESS"
+  },
+  "tools": {
+    "resolve_property": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Looks up a bounded set of matching DC property accounts without creating or changing records.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_complete_property_record": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves the available property, tax, ownership, sale, regulatory, and building sections for one resolved account without modifying data.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "resolve_properties_batch": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Resolves a caller-supplied list of up to 50 named properties without creating or changing records.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_property_snapshot": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves a compact property-account snapshot without modifying the source or serving database.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_assessment_history": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves prior, current, and proposed official assessment values without changing any record.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_tax_and_balance_history": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves official tax, balance, fee, credit, and tax-sale fields without changing an account.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_ownership_and_sale": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves public owner-of-record and mailing fields without updating ownership or contact data.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_latest_sale_and_deed": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves assessor sale history and deed context without recording or altering a transaction.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_permit_history": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves paginated public permit and certificate records without filing or changing a permit.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_license_history": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves paginated public license records associated with a premise without changing a license.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_inspection_and_enforcement_history": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves paginated public inspection and enforcement records without opening, closing, or changing a case.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_building_and_land_profile": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves public building, land, energy, and property-status context without changing a property record.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "search_properties": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Runs a bounded search using allowlisted filters and sorting without modifying or exporting the underlying dataset.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "get_source_evidence": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Validates supplied source references and retrieves provenance and official verification routes without changing source data.",
+        "open_world_justification": "Does not fetch, publish to, or change the returned external source routes.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    },
+    "describe_data": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns static coverage, vocabulary, limitation, and tool-routing guidance without changing data.",
+        "open_world_justification": "Does not publish content or change any external system.",
+        "destructive_justification": "Cannot delete, overwrite, revoke, or perform an irreversible action."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Resolve a well-known downtown address to its official property account before retrieving facts.",
+      "user_prompt": "Resolve 1717 K Street NW in Washington, DC and show the official property account and source links.",
+      "file_attachment_urls": null,
+      "tools_triggered": "resolve_property",
+      "expected_output": "Returns the resolved address and official account identity, preserves any ambiguity, and includes source references and verification routes.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Retrieve the complete available public-record package for one property.",
+      "user_prompt": "Give me the complete available property record for 1717 K Street NW, including ownership, assessments, taxes, sales, permits, licenses, inspections, enforcement, and building context.",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_complete_property_record",
+      "expected_output": "Returns every available section, distinguishes empty results from unavailable data, follows continuations when needed, and preserves sources and limitations.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Compare the official assessment stages without treating assessed value as an appraisal.",
+      "user_prompt": "Show the 2025 prior, 2026 current, and 2027 proposed assessments for 1717 K Street NW and clearly label each stage.",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_assessment_history",
+      "expected_output": "Returns the three assessment stages with tax years, source references, and a clear statement that assessed value is not an appraisal or lending value.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Review tax balances and tax-sale indicators while preserving the source fields.",
+      "user_prompt": "Check the tax and balance history for 1717 K Street NW, including penalties, interest, credits, and any tax-sale flags.",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_tax_and_balance_history",
+      "expected_output": "Returns the bounded tax history and source-preserving balance fields without inventing unsupported annual totals.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Run a bounded commercial-property screen with allowlisted filters and deterministic sorting.",
+      "user_prompt": "Find up to 20 commercial properties in Ward 2 with current assessments of at least $10 million, sorted by assessment from highest to lowest, and summarize the matches without making a lending decision.",
+      "file_attachment_urls": null,
+      "tools_triggered": "search_properties",
+      "expected_output": "Returns at most 20 matching property accounts with the applied filters, deterministic ordering, pagination details, sources, and no underwriting recommendation.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not invoke the app to certify legal title or lien priority.",
+      "user_prompt": "Certify that 1717 K Street NW has clear title and first lien priority.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because it does not provide title opinions, lien searches, or legal certifications.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not invoke the app to make a credit or underwriting decision.",
+      "user_prompt": "Approve or deny a commercial mortgage for this borrower and rank the loan risk.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because it does not evaluate borrowers or make lending, credit, eligibility, or underwriting decisions.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not invoke the app for an unbounded owner-name export.",
+      "user_prompt": "Export every DC property owned by a named person and include all owner mailing addresses.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because owner-name search and unbounded bulk exports are not supported.",
+      "expected_output_url": null
+    }
+  ]
+}
