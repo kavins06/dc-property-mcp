@@ -46,11 +46,13 @@ export async function verifyLive({
         "content-security-policy",
         "strict-transport-security",
         "x-content-type-options",
-        "x-request-id",
       ]) {
         if (!healthResponse.headers.get(requiredHeader)) {
           throw new Error(`healthz is missing ${requiredHeader}`);
         }
+      }
+      if (healthResponse.headers.has("x-request-id")) {
+        throw new Error("healthz exposes an internal request identifier");
       }
 
       const metadataResponse = await fetch(

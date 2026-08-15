@@ -5,7 +5,8 @@ export interface Env {
   ALLOWED_ORIGINS: string;
   BILLING_DB?: D1Database;
   BILLING_ENFORCEMENT?: "off" | "shadow" | "on";
-  BILLING_ACCOUNT_URL?: string;
+  ENTITLEMENT_HELP_URL?: string;
+  OPENAI_APPS_CHALLENGE_TOKEN?: string;
   GENERAL_RATE_LIMITER?: RateLimit;
   SEARCH_RATE_LIMITER?: RateLimit;
 }

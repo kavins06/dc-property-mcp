@@ -16,7 +16,6 @@ const MCP_EXPOSED_HEADERS = [
   "www-authenticate",
   "mcp-protocol-version",
   "mcp-session-id",
-  "x-request-id",
 ].join(", ");
 
 export class PayloadTooLargeError extends Error {
@@ -49,7 +48,6 @@ export function applyResponsePolicy(
   response: Response,
   request: Request,
   env: Env,
-  requestId: string,
 ): Response {
   const headers = new Headers(response.headers);
   headers.set("Strict-Transport-Security", "max-age=31536000");
@@ -59,8 +57,6 @@ export function applyResponsePolicy(
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Frame-Options", "DENY");
   headers.set("X-Robots-Tag", "noindex, nofollow");
-  headers.set("X-Request-ID", requestId);
-
   const origin = request.headers.get("origin");
   if (origin && allowedOrigin(request, env)) {
     headers.set("Access-Control-Allow-Origin", origin);
@@ -212,6 +208,19 @@ async function handleRequest(
       { headers: { "Cache-Control": "no-store" } },
     );
   }
+  if (url.pathname === "/.well-known/openai-apps-challenge") {
+    if (!["GET", "HEAD"].includes(request.method)) {
+      return jsonError("method_not_allowed", 405, { Allow: "GET, HEAD" });
+    }
+    const token = env.OPENAI_APPS_CHALLENGE_TOKEN?.trim();
+    if (!token) return jsonError("not_found", 404);
+    return new Response(request.method === "HEAD" ? null : token, {
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
+  }
   if (
     url.pathname === "/.well-known/oauth-protected-resource" ||
     url.pathname === "/.well-known/oauth-protected-resource/mcp"
@@ -252,7 +261,9 @@ async function handleRequest(
     return Response.json(
       {
         error: "subscription_required",
-        action_url: env.BILLING_ACCOUNT_URL ?? "https://quoindata.com/pricing",
+        help_url:
+          env.ENTITLEMENT_HELP_URL ??
+          "https://quoindata.com/docs/troubleshooting#subscription-access",
       },
       { status: 403, headers: { "Cache-Control": "no-store" } },
     );
@@ -328,12 +339,12 @@ export default {
     } catch (error) {
       errorName = error instanceof Error ? error.name : "UnknownError";
       response = Response.json(
-        { error: "service_unavailable", request_id: requestId },
+        { error: "service_unavailable" },
         { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "5" } },
       );
     }
 
-    const finalResponse = applyResponsePolicy(response, request, env, requestId);
+    const finalResponse = applyResponsePolicy(response, request, env);
     const log = {
       event: "mcp_request",
       request_id: requestId,

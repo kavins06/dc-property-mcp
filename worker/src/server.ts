@@ -3,7 +3,7 @@ import { z } from "zod";
 import { callApi } from "./db";
 import type { Env } from "./types";
 
-export const SERVICE_VERSION = "0.4.9";
+export const SERVICE_VERSION = "0.4.10";
 export const MAX_TOOL_RESPONSE_BYTES = 768 * 1024;
 
 // McpServer output validation requires an object schema. A Zod record is not
@@ -310,15 +310,12 @@ export function createServer(env: Env): McpServer {
     {
       title: "Get Source Evidence",
       description:
-        "Validate fact source references, then return official human-facing D.C. sources with exact lookup inputs and a safe fallback. Present `sources` to users; `evidence` is internal audit data. Does not return ArcGIS REST, JSON, or session-bound URLs.",
+        "Validate fact source references, then return machine-readable provenance and official human-facing D.C. sources with exact lookup inputs and a safe fallback. Present `sources` to users. Does not return ArcGIS REST, JSON, or session-bound URLs.",
       inputSchema: {
         source_refs: z.array(z.string().min(1).max(192)).min(1).max(50),
       },
       outputSchema: resultSchema,
-      annotations: {
-        ...READ_ONLY_ANNOTATIONS,
-        openWorldHint: true,
-      },
+      annotations: READ_ONLY_ANNOTATIONS,
     },
     async ({ source_refs }) =>
       toolResult(await callApi(env, "get_source_evidence", [source_refs])),

@@ -4,7 +4,7 @@ import test from "node:test";
 
 const root = new URL("../../", import.meta.url);
 
-test("public README and registry metadata match the v0.4.9 MCP contract", async () => {
+test("public README and registry metadata match the current MCP contract", async () => {
   const [readme, registryText, workerPackageText] = await Promise.all([
     readFile(new URL("README.md", root), "utf8"),
     readFile(new URL("server.json", root), "utf8"),

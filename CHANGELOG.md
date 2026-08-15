@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.10 — 2026-08-14
+
+- Added the OpenAI domain-verification challenge route, backed by a secret
+  Worker binding and closed by default.
+- Removed request identifiers from public response headers and error bodies
+  while retaining private operational correlation logs.
+- Replaced the subscription error's transactional account link with an
+  informational troubleshooting link.
+- Standardized every tool as read-only, non-destructive, idempotent, and
+  closed-world without changing tool names, inputs, outputs, or data behavior.
+
 ## 0.4.9 — 2026-08-14
 
 - Added human-readable titles to all 15 MCP tools for directory and client

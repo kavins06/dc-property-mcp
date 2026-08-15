@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 describe("HTTP boundary", () => {
-  it("adds a request ID and defensive headers to health responses", async () => {
+  it("adds defensive headers without exposing a request ID", async () => {
     vi.spyOn(console, "log").mockImplementation(() => undefined);
     const response = await worker.fetch(
       new Request("https://mcp.example.com/healthz"),
@@ -32,9 +32,9 @@ describe("HTTP boundary", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       service: "dc-property-mcp",
-      version: "0.4.9",
+      version: "0.4.10",
     });
-    expect(response.headers.get("x-request-id")).toBeTruthy();
+    expect(response.headers.get("x-request-id")).toBeNull();
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     expect(response.headers.get("content-security-policy")).toContain(
       "frame-ancestors 'none'",
@@ -42,6 +42,46 @@ describe("HTTP boundary", () => {
     expect(response.headers.get("strict-transport-security")).toBe(
       "max-age=31536000",
     );
+  });
+
+  it("serves the exact OpenAI domain challenge token only when configured", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const challengeEnv = {
+      ...env,
+      OPENAI_APPS_CHALLENGE_TOKEN: "openai-domain-token",
+    } as Env;
+    const response = await worker.fetch(
+      new Request("https://mcp.example.com/.well-known/openai-apps-challenge"),
+      challengeEnv,
+      ctx,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/plain; charset=utf-8");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(await response.text()).toBe("openai-domain-token");
+
+    const head = await worker.fetch(
+      new Request("https://mcp.example.com/.well-known/openai-apps-challenge", {
+        method: "HEAD",
+      }),
+      challengeEnv,
+      ctx,
+    );
+    expect(head.status).toBe(200);
+    expect(await head.text()).toBe("");
+  });
+
+  it("does not expose an OpenAI challenge route before a token is configured", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const response = await worker.fetch(
+      new Request("https://mcp.example.com/.well-known/openai-apps-challenge"),
+      env,
+      ctx,
+    );
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "not_found" });
   });
 
   it("permanently redirects the legacy production hostname", async () => {
@@ -189,7 +229,9 @@ describe("HTTP boundary", () => {
     );
 
     expect(response.status).toBe(503);
-    expect(await response.text()).not.toContain("sensitive upstream detail");
+    const body = await response.text();
+    expect(body).not.toContain("sensitive upstream detail");
+    expect(body).not.toContain("request_id");
     expect(response.headers.get("retry-after")).toBe("5");
   });
 });

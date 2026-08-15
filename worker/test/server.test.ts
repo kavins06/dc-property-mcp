@@ -18,7 +18,7 @@ describe("MCP tool catalog", () => {
       expect(client.getServerVersion()).toMatchObject({
         name: "dc-property-records",
         title: "Quoin Data — D.C. Property Records",
-        version: "0.4.9",
+        version: "0.4.10",
         icons: [
           {
             src: "https://quoindata.com/assets/mcp-logo.png",
@@ -75,7 +75,14 @@ describe("MCP tool catalog", () => {
           (tool) => tool.annotations?.destructiveHint === false,
         ),
       ).toBe(true);
-      expect(SERVICE_VERSION).toBe("0.4.9");
+      expect(
+        response.tools.every(
+          (tool) =>
+            tool.annotations?.idempotentHint === true &&
+            tool.annotations?.openWorldHint === false,
+        ),
+      ).toBe(true);
+      expect(SERVICE_VERSION).toBe("0.4.10");
     } finally {
       await client.close();
       await server.close();
