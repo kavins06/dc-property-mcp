@@ -98,6 +98,21 @@ describe("HTTP boundary", () => {
     );
   });
 
+  it("serves the legacy hostname when it is the configured staging resource", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const response = await worker.fetch(
+      new Request("https://dc-property-mcp.quoindata.com/mcp"),
+      {
+        ...env,
+        WORKOS_RESOURCE_URI: "https://dc-property-mcp.quoindata.com/mcp",
+      },
+      ctx,
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
   it("returns a browser preflight only for explicitly allowed origins", async () => {
     vi.spyOn(console, "log").mockImplementation(() => undefined);
     const response = await worker.fetch(

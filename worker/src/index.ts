@@ -1,6 +1,7 @@
 import { authenticate, protectedResourceMetadata, unauthorized } from "./auth";
 import { createServer, SERVICE_VERSION } from "./server";
 import { checkEntitlement } from "./entitlement";
+import { captureToolSuccesses, toolCalls } from "./analytics";
 import type { Env } from "./types";
 
 const MAX_MCP_REQUEST_BYTES = 128 * 1024;
@@ -193,9 +194,10 @@ async function handleRequest(
 ): Promise<Response> {
   const url = new URL(request.url);
 
-  if (url.hostname === LEGACY_PRODUCTION_HOST) {
+  const resourceHostname = new URL(env.WORKOS_RESOURCE_URI).hostname;
+  if (url.hostname === LEGACY_PRODUCTION_HOST && resourceHostname !== LEGACY_PRODUCTION_HOST) {
     const destination = new URL(request.url);
-    destination.hostname = new URL(env.WORKOS_RESOURCE_URI).hostname;
+    destination.hostname = resourceHostname;
     return Response.redirect(destination, 308);
   }
 
@@ -314,10 +316,16 @@ async function handleRequest(
 
   const server = createServer(env);
   const { createMcpHandler } = await import("agents/mcp");
+  const calls = await toolCalls(boundedRequest);
   const response = await createMcpHandler(server, {
     route: "/mcp",
     enableJsonResponse: true,
   })(boundedRequest, env, ctx);
+  if (calls.length > 0) {
+    const analytics = captureToolSuccesses(env, subject.sub, calls, response);
+    if (typeof ctx.waitUntil === "function") ctx.waitUntil(analytics);
+    else await analytics;
+  }
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", "no-store");
   return new Response(response.body, {
