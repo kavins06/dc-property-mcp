@@ -31,6 +31,11 @@ MCP client and complete the WorkOS OAuth sign-in flow; no API key is required
 for MCP authorization. This endpoint is not a consumer-facing REST API.
 Consumer-facing API access is by request.
 
+An authenticated conversational platform is in [`web/`](web/README.md). It
+uses Gemini on Vertex AI through the Vercel AI SDK, calls these same MCP tools, stores user
+workspaces locally in the browser, and exports PDF, Excel, Word, or Markdown.
+It introduces no additional database.
+
 It is deployed on Cloudflare Workers with a custom domain, Hyperdrive, two
 rate-limit bindings, and WorkOS AuthKit OAuth. The WorkOS production
 environment allows public email/password sign-up and supports both Client ID

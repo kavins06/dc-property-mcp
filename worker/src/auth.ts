@@ -26,10 +26,13 @@ export async function authenticate(
   if (!match?.[1]) return null;
 
   const issuer = issuerFor(env.WORKOS_AUTHKIT_DOMAIN);
+  const audiences = [env.WORKOS_RESOURCE_URI, env.WORKOS_CHAT_CLIENT_ID]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
   const { payload } = await jwtVerify(match[1], jwksFor(env.WORKOS_AUTHKIT_DOMAIN), {
     algorithms: ["RS256"],
     issuer,
-    audience: env.WORKOS_RESOURCE_URI,
+    audience: audiences,
   });
   if (!payload.sub) throw new Error("Access token is missing sub");
 

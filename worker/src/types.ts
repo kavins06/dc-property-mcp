@@ -2,6 +2,7 @@ export interface Env {
   HYPERDRIVE: Hyperdrive;
   WORKOS_AUTHKIT_DOMAIN: string;
   WORKOS_RESOURCE_URI: string;
+  WORKOS_CHAT_CLIENT_ID?: string;
   ALLOWED_ORIGINS: string;
   BILLING_DB?: D1Database;
   BILLING_ENFORCEMENT?: "off" | "shadow" | "on";

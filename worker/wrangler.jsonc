@@ -19,6 +19,7 @@
   "vars": {
     "WORKOS_AUTHKIT_DOMAIN": "ripe-theater-06.authkit.app",
     "WORKOS_RESOURCE_URI": "https://mcp.quoindata.com/mcp",
+    "WORKOS_CHAT_CLIENT_ID": "client_01M0DTKE8QDKR47RSKMR8B63Y9",
     "ALLOWED_ORIGINS": "",
     "BILLING_ENFORCEMENT": "on",
     "ENTITLEMENT_HELP_URL": "https://quoindata.com/docs/troubleshooting#subscription-access",

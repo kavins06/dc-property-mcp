@@ -104,6 +104,31 @@ describe("OAuth metadata", () => {
     ).rejects.toThrow();
   });
 
+  it("accepts the configured first-party chat client audience", async () => {
+    mockJwks();
+    const accessToken = await token({ audience: "client_quoin_chat" });
+    const subject = await authenticate(
+      new Request("https://mcp.example.com/mcp", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
+      { ...env, WORKOS_CHAT_CLIENT_ID: "client_quoin_chat" },
+    );
+    expect(subject?.sub).toBe("user_123");
+  });
+
+  it("rejects a chat client audience when it is not configured", async () => {
+    mockJwks();
+    const accessToken = await token({ audience: "client_quoin_chat" });
+    await expect(
+      authenticate(
+        new Request("https://mcp.example.com/mcp", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        env,
+      ),
+    ).rejects.toThrow();
+  });
+
   it("rejects an access token without a subject", async () => {
     mockJwks();
     const accessToken = await token({ subject: "" });

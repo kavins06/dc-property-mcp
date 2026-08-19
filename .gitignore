@@ -10,6 +10,9 @@ db/reports/generated/
 __pycache__/
 *.pyc
 node_modules/
+*.tsbuildinfo
+.next/
+next-env.d.ts
 .wrangler/
 worker/dist/
 /application-backups/
