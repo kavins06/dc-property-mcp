@@ -2,6 +2,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { AuthSubject, Env } from "./types";
 
 const jwksByDomain = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+const sessionJwksByClient = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
 function issuerFor(domain: string): string {
   return `https://${domain.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
@@ -17,6 +18,15 @@ function jwksFor(domain: string) {
   return jwks;
 }
 
+function sessionJwksFor(clientId: string) {
+  let jwks = sessionJwksByClient.get(clientId);
+  if (!jwks) {
+    jwks = createRemoteJWKSet(new URL(`https://api.workos.com/sso/jwks/${clientId}`));
+    sessionJwksByClient.set(clientId, jwks);
+  }
+  return jwks;
+}
+
 export async function authenticate(
   request: Request,
   env: Env,
@@ -26,14 +36,22 @@ export async function authenticate(
   if (!match?.[1]) return null;
 
   const issuer = issuerFor(env.WORKOS_AUTHKIT_DOMAIN);
-  const audiences = [env.WORKOS_RESOURCE_URI, env.WORKOS_CHAT_CLIENT_ID]
-    .map((value) => value?.trim())
-    .filter((value): value is string => Boolean(value));
-  const { payload } = await jwtVerify(match[1], jwksFor(env.WORKOS_AUTHKIT_DOMAIN), {
-    algorithms: ["RS256"],
-    issuer,
-    audience: audiences,
-  });
+  let payload;
+  try {
+    ({ payload } = await jwtVerify(match[1], jwksFor(env.WORKOS_AUTHKIT_DOMAIN), {
+      algorithms: ["RS256"],
+      issuer,
+      audience: env.WORKOS_RESOURCE_URI,
+    }));
+  } catch (oauthError) {
+    const clientId = env.WORKOS_CHAT_CLIENT_ID?.trim();
+    if (!clientId) throw oauthError;
+    ({ payload } = await jwtVerify(match[1], sessionJwksFor(clientId), {
+      algorithms: ["RS256"],
+      issuer,
+    }));
+    if (payload.client_id !== clientId) throw oauthError;
+  }
   if (!payload.sub) throw new Error("Access token is missing sub");
 
   const scopeValue = typeof payload.scope === "string" ? payload.scope : "";

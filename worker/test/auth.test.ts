@@ -37,15 +37,22 @@ afterEach(() => {
 
 async function token(options?: {
   audience?: string;
+  clientId?: string;
   issuer?: string;
+  session?: boolean;
   subject?: string;
 }) {
-  let builder = new SignJWT({ scope: "openid profile" })
+  let builder = new SignJWT({
+    scope: "openid profile",
+    ...(options?.clientId && { client_id: options.clientId }),
+  })
     .setProtectedHeader({ alg: "RS256", kid: "test-key" })
     .setIssuer(options?.issuer ?? "https://auth.example.com")
-    .setAudience(options?.audience ?? "https://mcp.example.com/mcp")
     .setIssuedAt()
     .setExpirationTime("5m");
+  if (!options?.session) {
+    builder = builder.setAudience(options?.audience ?? "https://mcp.example.com/mcp");
+  }
   if (options?.subject !== "") {
     builder = builder.setSubject(options?.subject ?? "user_123");
   }
@@ -104,9 +111,9 @@ describe("OAuth metadata", () => {
     ).rejects.toThrow();
   });
 
-  it("accepts the configured first-party chat client audience", async () => {
+  it("accepts a session from the configured first-party application", async () => {
     mockJwks();
-    const accessToken = await token({ audience: "client_quoin_chat" });
+    const accessToken = await token({ clientId: "client_quoin_chat", session: true });
     const subject = await authenticate(
       new Request("https://mcp.example.com/mcp", {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -116,9 +123,9 @@ describe("OAuth metadata", () => {
     expect(subject?.sub).toBe("user_123");
   });
 
-  it("rejects a chat client audience when it is not configured", async () => {
+  it("rejects an application session when it is not configured", async () => {
     mockJwks();
-    const accessToken = await token({ audience: "client_quoin_chat" });
+    const accessToken = await token({ clientId: "client_quoin_chat", session: true });
     await expect(
       authenticate(
         new Request("https://mcp.example.com/mcp", {

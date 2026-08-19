@@ -32,7 +32,7 @@ for MCP authorization. This endpoint is not a consumer-facing REST API.
 Consumer-facing API access is by request.
 
 An authenticated conversational platform is in [`web/`](web/README.md). It
-uses Gemini on Vertex AI through the Vercel AI SDK, calls these same MCP tools, stores user
+uses the Gemini API through the Vercel AI SDK, calls these same MCP tools, stores user
 workspaces locally in the browser, and exports PDF, Excel, Word, or Markdown.
 It introduces no additional database.
 
