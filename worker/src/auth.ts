@@ -48,7 +48,6 @@ export async function authenticate(
     if (!clientId) throw oauthError;
     ({ payload } = await jwtVerify(match[1], sessionJwksFor(clientId), {
       algorithms: ["RS256"],
-      issuer,
     }));
     if (payload.client_id !== clientId) throw oauthError;
   }

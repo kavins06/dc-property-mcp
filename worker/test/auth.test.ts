@@ -136,6 +136,19 @@ describe("OAuth metadata", () => {
     ).rejects.toThrow();
   });
 
+  it("rejects a session from a different first-party application", async () => {
+    mockJwks();
+    const accessToken = await token({ clientId: "client_other", session: true });
+    await expect(
+      authenticate(
+        new Request("https://mcp.example.com/mcp", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+        { ...env, WORKOS_CHAT_CLIENT_ID: "client_quoin_chat" },
+      ),
+    ).rejects.toThrow();
+  });
+
   it("rejects an access token without a subject", async () => {
     mockJwks();
     const accessToken = await token({ subject: "" });

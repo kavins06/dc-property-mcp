@@ -247,7 +247,11 @@ async function handleRequest(
   let subject;
   try {
     subject = await authenticate(request, env);
-  } catch {
+  } catch (error) {
+    console.warn("WorkOS token verification failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : "Unknown verification error",
+    });
     return unauthorized(request, env);
   }
   if (!subject) return unauthorized(request, env);
