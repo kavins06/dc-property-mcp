@@ -1,5 +1,7 @@
 import { createVertex } from "@ai-sdk/google-vertex";
+import { getVercelOidcToken } from "@vercel/oidc";
 import { withAuth } from "@workos-inc/authkit-nextjs";
+import { ExternalAccountClient } from "google-auth-library";
 import {
   convertToModelMessages,
   createUIMessageStreamResponse,
@@ -44,7 +46,23 @@ export async function POST(request: Request) {
   }
 
   const env = getServerEnv();
-  const vertex = createVertex({ apiKey: env.GOOGLE_VERTEX_API_KEY });
+  const authClient = env.GCP_PROJECT_NUMBER
+    ? ExternalAccountClient.fromJSON({
+        type: "external_account",
+        audience: `//iam.googleapis.com/projects/${env.GCP_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${env.GCP_WORKLOAD_IDENTITY_POOL_ID}/providers/${env.GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID}`,
+        subject_token_type: "urn:ietf:params:oauth:token-type:jwt",
+        token_url: "https://sts.googleapis.com/v1/token",
+        service_account_impersonation_url: `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${env.GCP_SERVICE_ACCOUNT_EMAIL}:generateAccessToken`,
+        subject_token_supplier: { getSubjectToken: getVercelOidcToken },
+      })
+    : null;
+  const vertex = createVertex({
+    project: env.GOOGLE_VERTEX_PROJECT,
+    location: env.GOOGLE_VERTEX_LOCATION,
+    ...(authClient && {
+      googleAuthOptions: { authClient, projectId: env.GOOGLE_VERTEX_PROJECT },
+    }),
+  });
   const { client, tools: propertyTools } = await createPropertyMcpClient(accessToken);
   const tools = {
     ...propertyTools,

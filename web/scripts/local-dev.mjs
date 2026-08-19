@@ -13,14 +13,11 @@ const workos = getActiveEnvironment();
 if (!workos?.apiKey || !workos.clientId) {
   throw new Error("No active WorkOS CLI environment. Run `workos env add` first.");
 }
-if (!process.env.GOOGLE_VERTEX_API_KEY) {
-  throw new Error("GOOGLE_VERTEX_API_KEY is required.");
-}
-
 const port = process.env.PORT || "3001";
 const env = {
   ...process.env,
-  GOOGLE_VERTEX_API_KEY: process.env.GOOGLE_VERTEX_API_KEY,
+  GOOGLE_VERTEX_PROJECT: process.env.GOOGLE_VERTEX_PROJECT || "quoin-data-mcp-oauth",
+  GOOGLE_VERTEX_LOCATION: process.env.GOOGLE_VERTEX_LOCATION || "us-central1",
   GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.5-flash",
   MCP_SERVER_URL: process.env.MCP_SERVER_URL || "https://mcp.quoindata.com/mcp",
   WORKOS_API_KEY: workos.apiKey,
