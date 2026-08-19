@@ -1,10 +1,10 @@
 # Quoin Property Intelligence
 
-Authenticated conversational access to Quoin's existing property MCP. The app uses the Gemini API through the Vercel AI SDK, discovers the existing read-only MCP tools at runtime, keeps workspaces in browser IndexedDB, and exports conversations as PDF, Excel, Word, or Markdown. It does not add or modify a database.
+Authenticated conversational access to Quoin's existing property MCP. The app uses Gemini on Vertex AI Express Mode through the Vercel AI SDK, discovers the existing read-only MCP tools at runtime, keeps workspaces in browser IndexedDB, and exports conversations as PDF, Excel, Word, or Markdown. It does not add or modify a database.
 
 ## Local setup
 
-For this workstation, the app can use the active WorkOS CLI environment and a `GEMINI_API_KEY` from the shell without copying either secret into the repository:
+For this workstation, the app can use the active WorkOS CLI environment and a `GOOGLE_VERTEX_API_KEY` from the shell without copying either secret into the repository:
 
 ```powershell
 npm install
@@ -15,7 +15,7 @@ The local runner defaults to port 3001 because the Quoin website currently uses 
 
 For a conventional environment-based setup, copy `.env.example` to `.env.local` and set:
 
-- `GEMINI_API_KEY` and `GEMINI_MODEL`
+- `GOOGLE_VERTEX_API_KEY` and `GEMINI_MODEL`
 - the existing `MCP_SERVER_URL`
 - `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, and a 32-character `WORKOS_COOKIE_PASSWORD`
 - `NEXT_PUBLIC_WORKOS_REDIRECT_URI=http://localhost:3000/auth/callback`

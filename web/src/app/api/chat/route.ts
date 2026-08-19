@@ -1,4 +1,4 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createVertex } from "@ai-sdk/google-vertex";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import {
   convertToModelMessages,
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   }
 
   const env = getServerEnv();
-  const google = createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY });
+  const vertex = createVertex({ apiKey: env.GOOGLE_VERTEX_API_KEY });
   const { client, tools: propertyTools } = await createPropertyMcpClient(accessToken);
   const tools = {
     ...propertyTools,
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
   try {
     const validated = await validateUIMessages<RuntimeMessage>({ messages, tools });
     const result = streamText({
-      model: google(env.GEMINI_MODEL),
+      model: vertex(env.GEMINI_MODEL),
       instructions: PROPERTY_AGENT_INSTRUCTIONS,
       messages: await convertToModelMessages(validated),
       tools,

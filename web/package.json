@@ -12,7 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ai-sdk/google": "4.0.46",
+    "@ai-sdk/google-vertex": "5.0.57",
     "@ai-sdk/mcp": "2.0.32",
     "@ai-sdk/react": "4.0.71",
     "@workos-inc/authkit-nextjs": "4.3.1",

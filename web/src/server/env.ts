@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const schema = z.object({
-  GEMINI_API_KEY: z.string().min(20),
+  GOOGLE_VERTEX_API_KEY: z.string().min(20),
   GEMINI_MODEL: z.string().min(1),
   MCP_SERVER_URL: z.url(),
 });

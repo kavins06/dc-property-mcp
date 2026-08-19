@@ -13,15 +13,15 @@ const workos = getActiveEnvironment();
 if (!workos?.apiKey || !workos.clientId) {
   throw new Error("No active WorkOS CLI environment. Run `workos env add` first.");
 }
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY is required.");
+if (!process.env.GOOGLE_VERTEX_API_KEY) {
+  throw new Error("GOOGLE_VERTEX_API_KEY is required.");
 }
 
 const port = process.env.PORT || "3001";
 const env = {
   ...process.env,
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+  GOOGLE_VERTEX_API_KEY: process.env.GOOGLE_VERTEX_API_KEY,
+  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.5-flash",
   MCP_SERVER_URL: process.env.MCP_SERVER_URL || "https://mcp.quoindata.com/mcp",
   WORKOS_API_KEY: workos.apiKey,
   WORKOS_CLIENT_ID: workos.clientId,
