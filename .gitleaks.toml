@@ -1,10 +1,2 @@
 [extend]
 useDefault = true
-
-[[allowlists]]
-description = "Public national migration ledger identifiers"
-stopwords = [
-  "national-foundation-v1",
-  "national-geography-2025",
-  "national-availability-reason-v1",
-]
