@@ -2,9 +2,11 @@
 
 ## Status
 
-Approved by the owner on 2026-08-21. Hetzner cancellation automation and a
-cancellation handoff are out of scope. This document does not authorize deleting
-Hetzner compute or Object Storage.
+Approved by the owner on 2026-08-21. On 2026-08-22 the owner separately
+authorized removal of the retired property PostgreSQL compute. The exact
+`18/dcproperty` cluster and its D.C.-specific timers were removed after final
+backup verification. Hetzner Object Storage remains retained. The shared server
+and volume remain because they host the unrelated CMBS system.
 
 Gate 3 completed on 2026-08-22 at zero public traffic. On 2026-08-22 the owner
 explicitly waived the proposed 30-day soak and durable listener. Gates 4–6 use

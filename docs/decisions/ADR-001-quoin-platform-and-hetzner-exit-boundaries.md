@@ -197,10 +197,13 @@ after Neon and the Cloudflare database path complete their soak period.
   marketing and platform failure domains.
 - Only two production repositories are required for the property product.
 - The database and MCP contract evolve together.
-- Hetzner compute cancellation is intentionally delayed until validation and
-  soak evidence prove it safe.
+- The property database's `18/dcproperty` Hetzner cluster was removed on
+  2026-08-22 after explicit owner approval and a verified encrypted full backup.
+- The shared Hetzner server and volume were not deleted because they still host
+  the separate CMBS PostgreSQL clusters and are outside this property's scope.
 - The Hetzner account and Object Storage charges remain active after the
   database migration. A complete Hetzner exit requires a separately approved,
   verified object-storage migration.
-- Maryland and Virginia work can continue locally without creating an implicit
-  publication path.
+- Maryland and Virginia rehearsal databases from the retired cluster remain
+  recoverable inside the final encrypted pgBackRest backup without creating an
+  implicit publication path.

@@ -5,7 +5,7 @@
 - MCP: `https://mcp.quoindata.com/mcp`
 - Health: `https://mcp.quoindata.com/healthz`
 - Authentication: WorkOS AuthKit
-- Database: PostgreSQL 18 on Hetzner through Hyperdrive and Workers VPC
+- Database: PostgreSQL 18 on Neon through Cloudflare Hyperdrive
 - Contract: v0.4.11, 22 read-only MCP tools (15 D.C. tools plus 7 national routing/availability tools)
 
 A healthy unauthenticated MCP request returns `401` with a
@@ -13,11 +13,12 @@ A healthy unauthenticated MCP request returns `401` with a
 
 ## Production identifiers
 
-- PostgreSQL cluster: `18/dcproperty`, loopback port 5434
-- Hetzner Hyperdrive: `5fd47b059f824188998ad4ce9dc4503c`
-- Immutable Hetzner Worker rollback version:
-  `bfb184ec-dc18-4b63-aab0-30c320b17cf7`
-- Neon candidate Hyperdrive: `d4524b1f397a454da9f9b37105d8d399`
+- Neon production project/branch: `orange-feather-99332051` / `br-soft-feather-ayz26yo9`
+- Neon production Hyperdrive: `d4524b1f397a454da9f9b37105d8d399`
+- Production Worker version: `15cc38a9-4b00-454c-b072-529ab84624f0` (`0.4.11`)
+- Retired Hetzner cluster: `18/dcproperty` (removed 2026-08-22)
+- Retired Hetzner Hyperdrive: `5fd47b059f824188998ad4ce9dc4503c`
+- Final encrypted Hetzner Object Storage backup: `20260822-083140F`, LSN `B/9A000190`
 - Supabase legacy Hyperdrive (not a Gate 5 rollback target):
   `a9ec4dc6114e4057a11bea66b8fe50b3`
 - Workers VPC service: `019faa01-7a77-7ac3-83c4-40c9439e5499`
@@ -25,9 +26,10 @@ A healthy unauthenticated MCP request returns `401` with a
 - WorkOS resource: `https://mcp.quoindata.com/mcp`
 - Alert destination: `kavins@quoindata.com`
 
-Worker version and deployment IDs are recorded in the gate receipt. During the
-Neon soak, the immutable pre-candidate Worker and its Hetzner Hyperdrive remain
-the rollback pair; the Supabase Hyperdrive is legacy inventory only.
+Worker version and deployment IDs are recorded in the gate receipt. The live
+Hetzner PostgreSQL rollback was retired with owner approval after a final full
+encrypted backup. Hetzner Object Storage remains the recovery repository; the
+Supabase and Hetzner Hyperdrives are legacy inventory only.
 
 ## Release gates
 
