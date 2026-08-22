@@ -176,8 +176,10 @@ the new national API surface.
 3. Retrieve the currently deployed Worker version and bindings from
    Cloudflare. Upload a candidate with byte-identical modules and inherited
    bindings; the only semantic change is the `HYPERDRIVE` binding ID.
-4. Create a deployment containing live version 47 at 100% and the Neon
-   candidate at 0%. Do not build from the dirty local DMV Worker tree.
+4. Re-read and persist the immutable live Worker version ID immediately before
+   staging (currently `bfb184ec-dc18-4b63-aab0-30c320b17cf7`). Create a
+   deployment containing that exact ID at 100% and the Neon candidate at 0%.
+   Do not build from the dirty local DMV Worker tree.
 5. Use Cloudflare's version-override header to invoke the zero-percent
    candidate. Perform the complete anonymous, authenticated, entitlement,
    error-shape, pagination, rate-limit, timeout, and D.C. tool-catalog suite.
@@ -238,9 +240,10 @@ Make Neon authoritative for serving while retaining immediate Hetzner rollback.
 
 ### Rollback
 
-Restore version 47 to 100% immediately. Because the service is read-only,
-there is no application-data reconciliation step. Keep Neon for diagnosis and
-do not modify the Hetzner source.
+Restore the immutable pre-candidate Worker version ID recorded at staging to
+100% immediately. Because the service is read-only, there is no
+application-data reconciliation step. Keep Neon for diagnosis and do not
+modify the Hetzner source.
 
 ## Gate 6 — National MCP contract and Hetzner compute retirement handoff
 
