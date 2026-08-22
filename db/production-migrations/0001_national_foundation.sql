@@ -626,6 +626,8 @@ alter schema geo owner to data_owner;
 grant usage on schema meta to data_owner;
 set local role data_owner;
 
+grant usage on schema geo to dc_property_admin;
+
 do $admin_grants$
 declare
   v_table regclass;

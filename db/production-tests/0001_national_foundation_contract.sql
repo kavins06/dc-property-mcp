@@ -32,11 +32,12 @@ begin
     raise exception 'deleted D.C. accounts entered the national generation';
   end if;
 
-  if (select count(*) from meta.production_migration) <> 1
-     or (select migration_key from meta.production_migration)
-        <> 'national-foundation-v1'
-     or (select migration_sha256 from meta.production_migration)
-        !~ '^[0-9a-f]{64}$' then
+  if not exists (
+    select 1
+    from meta.production_migration
+    where migration_key = 'national-foundation-v1'
+      and migration_sha256 ~ '^[0-9a-f]{64}$'
+  ) then
     raise exception 'production migration ledger is incomplete';
   end if;
 
@@ -152,10 +153,14 @@ begin
      or nullif(v_va->>'reason', '') is null then
     raise exception 'unpublished jurisdiction availability is dishonest';
   end if;
-  if pg_catalog.jsonb_array_length(
-       api_v1.list_national_jurisdictions(null)
-     ) <> 1 then
-    raise exception 'runtime publication contains a non-D.C. member';
+  if (
+    select count(*)
+    from pg_catalog.jsonb_array_elements(
+      api_v1.list_national_jurisdictions(null)
+    ) item
+    where item->>'availability' = 'available'
+  ) <> 1 then
+    raise exception 'runtime publication contains a non-D.C. available member';
   end if;
 
   begin

@@ -51,5 +51,8 @@ test("national runtime is function-only and initially D.C.-only", () => {
   assert.match(migration, /'area_us_dc'.*'available'/s);
   assert.doesNotMatch(migration, /'area_us_md'.*'available'/s);
   assert.doesNotMatch(migration, /'area_us_va'.*'available'/s);
-  assert.match(contract, /runtime publication contains a non-D\.C\. member/);
+  assert.match(
+    contract,
+    /runtime publication contains a non-D\.C\. available member/,
+  );
 });
