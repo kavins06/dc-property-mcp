@@ -1,0 +1,13 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public national migration ledger identifiers"
+condition = "AND"
+regexTarget = "match"
+paths = [
+  '''^db/(?:production-(?:migrations|rollbacks|tests)|reports)/''',
+]
+regexes = [
+  '''national-(?:foundation-v1|geography-2025|availability-reason-v1)''',
+]
