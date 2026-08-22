@@ -18,6 +18,13 @@ const contract = readFileSync(
   ),
   "utf8",
 );
+const availabilityMigration = readFileSync(
+  resolve(
+    import.meta.dirname,
+    "../../db/production-migrations/0003_national_availability_reason.sql",
+  ),
+  "utf8",
+);
 
 const migrationSha256 = createHash("sha256").update(migration).digest("hex");
 
@@ -34,6 +41,15 @@ test("national production foundation is independently fail-closed", () => {
   assert.match(migration, /begin;/i);
   assert.match(migration, /commit;/i);
   assert.doesNotMatch(migration, /dc_property_dmv_rehearsal_20260819/);
+});
+
+test("national availability correction is checksum-pinned and fail-closed", () => {
+  assert.equal(
+    createHash("sha256").update(availabilityMigration).digest("hex"),
+    "b151a3bb896b5f4b21dc8efb55af54546dd37c6397c0c70573a81f24e72ccaab",
+  );
+  assert.match(availabilityMigration, /national-availability-reason-v1/);
+  assert.match(availabilityMigration, /m\.availability_status = 'available'/);
 });
 
 test("national publication requires a transaction-local marker", () => {
@@ -66,6 +82,7 @@ test("national runtime is function-only and initially D.C.-only", () => {
 
 test("national production rollbacks bind to exact reviewed migrations", () => {
   for (const name of [
+    "0003_national_availability_reason.sql",
     "0002_national_geography_2025.sql",
     "0001_national_foundation.sql",
   ]) {
