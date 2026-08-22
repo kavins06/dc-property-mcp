@@ -6,6 +6,9 @@ Approved by the owner on 2026-08-21, with Hetzner compute cancellation retained
 as a manual owner action. This document does not authorize deleting Hetzner
 compute or Object Storage.
 
+Gate 3 completed on 2026-08-22 at zero public traffic. Gate 4 is next; Gates 5
+and 6 remain pending their staged rollout and 30-day soak requirements.
+
 ## Outcome
 
 Complete the property product's infrastructure migration without coupling it

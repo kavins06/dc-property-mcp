@@ -31,11 +31,24 @@ begin
      or (select area_kind from geo.area where area_uid = 'area_us_md_county_24510') <> 'independent_city' then
     raise exception 'independent-city classification is incorrect';
   end if;
-  if (select count(*) from meta.production_migration) <> 2
+  if (select count(*) from meta.production_migration) not in (2, 3)
+     or exists (
+       select 1 from meta.production_migration
+       where migration_key not in (
+         'national-foundation-v1',
+         'national-geography-2025',
+         'national-availability-reason-v1'
+       )
+     )
      or not exists (
        select 1 from meta.production_migration
        where migration_key = 'national-geography-2025'
          and migration_sha256 ~ '^[0-9a-f]{64}$'
+     )
+     or exists (
+       select 1 from meta.production_migration
+       where migration_key = 'national-availability-reason-v1'
+         and migration_sha256 <> 'b151a3bb896b5f4b21dc8efb55af54546dd37c6397c0c70573a81f24e72ccaab'
      ) then
     raise exception 'national geography migration ledger is incomplete';
   end if;

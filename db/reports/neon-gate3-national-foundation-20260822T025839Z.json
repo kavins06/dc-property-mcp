@@ -1,0 +1,123 @@
+{
+  "gate": 3,
+  "status": "complete",
+  "completed_at": "2026-08-22T02:58:39.021Z",
+  "boundary": {
+    "public_traffic_to_neon_percent": 0,
+    "worker_changed": false,
+    "hyperdrive_changed": false,
+    "hetzner_postgresql_changed": false,
+    "hetzner_object_storage_changed": false,
+    "maryland_property_rows_published": 0,
+    "virginia_property_rows_published": 0
+  },
+  "neon": {
+    "project_id": "orange-feather-99332051",
+    "production_branch_id": "br-soft-feather-ayz26yo9",
+    "production_branch_protected": true,
+    "rehearsal_branch_id": "br-raspy-unit-ay20ucy2",
+    "database": "dc_property",
+    "post_validation_lsn": "6/F6862000"
+  },
+  "source_binding": {
+    "gate2_report_sha256": "f2d7f888014939c66d87bfc77ea89d4687bcd56a8c881d5fcf624919c8705d40",
+    "git_implementation_commit": "5a1f5f8f3214c5a3b2934d70e094c08fcacf4a42",
+    "github_pull_request": 3,
+    "required_github_check": "test",
+    "required_github_check_status": "pass",
+    "vercel_check_status": "failing_out_of_scope_stale_project_linkage"
+  },
+  "migrations": [
+    {
+      "key": "national-foundation-v1",
+      "sha256": "b84cee659122185318d3abc11c2097a00949882586b45fefa140de0a702b2ffe",
+      "target_class": "production"
+    },
+    {
+      "key": "national-geography-2025",
+      "sha256": "04c01e855b78a43e78ef6c43b48f9d52937bd188451f0178c4063d9942a3e87d",
+      "target_class": "production"
+    },
+    {
+      "key": "national-availability-reason-v1",
+      "sha256": "b151a3bb896b5f4b21dc8efb55af54546dd37c6397c0c70573a81f24e72ccaab",
+      "target_class": "production"
+    }
+  ],
+  "rollback_sha256": {
+    "0001_national_foundation.sql": "0958832ccba1ad6b44b63302de2cfdda106f5e35b708a2f6a05333584326da07",
+    "0002_national_geography_2025.sql": "9babed9bde591b9708c29d30aff56f3ef2ba8d34c211c333d27df69605040f81",
+    "0003_national_availability_reason.sql": "e6457b464ef5f40163ac78059febc3e060d938f323118678d668a373dc65206c"
+  },
+  "catalog_counts": {
+    "areas": 3275,
+    "area_identifiers": 9823,
+    "area_relations": 3274,
+    "top_level_jurisdictions": 52,
+    "county_equivalents": 3222,
+    "maryland_county_equivalents": 24,
+    "virginia_county_equivalents": 133,
+    "dc_property_identities": 215773,
+    "active_publication_members": 1,
+    "active_publication_pointers": 1
+  },
+  "extensions": {
+    "pg_trgm": "1.6",
+    "pgcrypto": "1.4"
+  },
+  "validation": {
+    "rehearsal_install": "pass",
+    "rehearsal_rollback_exact_absence": "pass",
+    "rehearsal_reinstall": "pass",
+    "production_sql_contracts": "pass",
+    "legacy_api_byte_hashes": {
+      "status": "exact",
+      "probe_count": 16
+    },
+    "legacy_catalog_hashes": {
+      "status": "exact",
+      "families": 7
+    },
+    "legacy_row_and_sequence_state": {
+      "status": "exact",
+      "probe_count": 52
+    },
+    "invalid_indexes": 0,
+    "unvalidated_constraints": 0,
+    "runtime_new_table_privileges": 0,
+    "runtime_role_settings": [
+      "default_transaction_read_only=on",
+      "statement_timeout=3s",
+      "idle_in_transaction_session_timeout=5s",
+      "search_path=pg_catalog, api_v1"
+    ],
+    "dc_availability": "available",
+    "dc_unavailable_reason_is_null": true,
+    "maryland_availability": "unavailable",
+    "virginia_availability": "unavailable"
+  },
+  "warm_performance_ms": {
+    "building": { "production_p95": 5.701, "rehearsal_p95": 8.117, "rehearsal_max": 61.116 },
+    "complete": { "production_p95": 114.274, "rehearsal_p95": 104.018, "rehearsal_max": 395.221 },
+    "resolve": { "production_p95": 0.723, "rehearsal_p95": 0.927, "rehearsal_max": 7.727 },
+    "search": { "production_p95": 15.391, "rehearsal_p95": 19.624, "rehearsal_max": 20.244 },
+    "gate": "pass_under_3s_and_no_worse_than_2x"
+  },
+  "tests": {
+    "loader": { "passed": 121, "skipped": 2, "failed": 0 },
+    "production_scripts": { "passed": 45, "failed": 0 },
+    "worker": { "passed": 62, "skipped": 1, "failed": 0 },
+    "worker_typescript": "pass"
+  },
+  "security_review": {
+    "scan_id": "39ba6b75-8c9f-46de-8299-7e6b4bb0bc79",
+    "coverage": "complete",
+    "externally_reportable_findings": 0,
+    "privileged_path_defects_found_and_fixed": [
+      "active publication membership was mutable in place after approval",
+      "verified Gazetteer ZIPs did not authenticate separately parsed text"
+    ],
+    "additional_correctness_defect_found_and_fixed": "available D.C. inherited an unavailable reason",
+    "tac_status": "unverified_connector_not_logged_in"
+  }
+}
