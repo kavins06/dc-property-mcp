@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { Client } from "../worker/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js";
 import { StreamableHTTPClientTransport } from "../worker/node_modules/@modelcontextprotocol/sdk/dist/esm/client/streamableHttp.js";
@@ -12,7 +13,6 @@ const serverUrl = new URL(
 const authServerUrl = new URL(
   process.env.MCP_AUTH_SERVER_URL ?? serverUrl,
 );
-const isCandidate = authServerUrl.origin !== serverUrl.origin;
 const project = resolve(import.meta.dirname, "..");
 const serviceVersion = JSON.parse(
   readFileSync(resolve(project, "worker", "package.json"), "utf8"),
@@ -22,6 +22,7 @@ const callbackTimeoutSeconds = Number(
   process.env.MCP_OAUTH_CALLBACK_TIMEOUT_SECONDS ?? 600,
 );
 const versionOverride = process.env.MCP_WORKER_VERSION_OVERRIDE;
+const isCandidate = Boolean(versionOverride) || authServerUrl.origin !== serverUrl.origin;
 if (
   versionOverride &&
   !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -224,6 +225,24 @@ function structured(result) {
   return text ? JSON.parse(text) : {};
 }
 
+function canonicalJson(value) {
+  if (Array.isArray(value)) return value.map(canonicalJson);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, item]) => [key, canonicalJson(item)]),
+    );
+  }
+  return value;
+}
+
+function responseHash(value) {
+  return createHash("sha256")
+    .update(JSON.stringify(canonicalJson(value)))
+    .digest("hex");
+}
+
 const expectedTools = [
   "resolve_property",
   "resolve_properties_batch",
@@ -339,6 +358,7 @@ try {
 
   const timings = {};
   const statuses = {};
+  const responseSha256 = {};
   let saleSourceRef;
   for (const [name, args] of probes) {
     const started = performance.now();
@@ -346,6 +366,7 @@ try {
     timings[name] = Number((performance.now() - started).toFixed(1));
     const payload = structured(result);
     statuses[name] = payload.status;
+    responseSha256[name] = responseHash(payload);
     if (!["resolved", "ok"].includes(payload.status)) {
       throw new Error(`${name} returned unexpected status ${payload.status}`);
     }
@@ -400,6 +421,7 @@ try {
   );
   const evidence = structured(evidenceResult);
   statuses.get_source_evidence = evidence.status;
+  responseSha256.get_source_evidence = responseHash(evidence);
   const portal =
     evidence.evidence?.[0]?.human_verification?.portal_url ?? "";
   if (
@@ -415,10 +437,12 @@ try {
     service_version: serviceVersion,
     endpoint: serverUrl.toString(),
     authorization_resource: authServerUrl.toString(),
+    worker_version_override: versionOverride ?? null,
     tool_count: toolNames.length,
     tool_metadata_validated: true,
     tools: toolNames,
     statuses,
+    response_sha256: responseSha256,
     timings_ms: timings,
     sale_evidence_portal: portal,
     verified_at: new Date().toISOString(),
