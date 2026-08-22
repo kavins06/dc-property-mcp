@@ -21,6 +21,15 @@ const callbackPort = Number(process.env.MCP_OAUTH_CALLBACK_PORT ?? 8765);
 const callbackTimeoutSeconds = Number(
   process.env.MCP_OAUTH_CALLBACK_TIMEOUT_SECONDS ?? 600,
 );
+const versionOverride = process.env.MCP_WORKER_VERSION_OVERRIDE;
+if (
+  versionOverride &&
+  !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    versionOverride,
+  )
+) {
+  throw new Error("MCP_WORKER_VERSION_OVERRIDE must be a Worker version UUID.");
+}
 if (
   !Number.isSafeInteger(callbackTimeoutSeconds) ||
   callbackTimeoutSeconds < 60 ||
@@ -35,7 +44,16 @@ async function loggingFetch(input, init = {}) {
   const requestUrl = new URL(
     input instanceof Request ? input.url : input.toString(),
   );
-  const response = await fetch(input, init);
+  const headers = new Headers(
+    init.headers ?? (input instanceof Request ? input.headers : undefined),
+  );
+  if (versionOverride && requestUrl.origin === serverUrl.origin) {
+    headers.set(
+      "Cloudflare-Workers-Version-Overrides",
+      `dc-property-mcp="${versionOverride}"`,
+    );
+  }
+  const response = await fetch(input, { ...init, headers });
   if (!response.ok) {
     const details = await response
       .clone()
