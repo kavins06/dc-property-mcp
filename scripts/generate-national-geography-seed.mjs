@@ -8,11 +8,13 @@ const EXPECTED = {
     header: ["USPS", "GEOID", "GEOIDFQ", "NAME", "ALAND", "AWATER", "ALAND_SQMI", "AWATER_SQMI", "INTPTLAT", "INTPTLONG"],
     rows: 52,
     zipSha256: "5c0bb56f4824af366538d73bffd229e790d301356624302eeca24d09cf27ba30",
+    textSha256: "0cbac15032fcbe2f0d3d1acee3066bbb30c00eadf2eed7b841f97ff368a79adf",
   },
   counties: {
     header: ["USPS", "GEOID", "GEOIDFQ", "ANSICODE", "NAME", "ALAND", "AWATER", "ALAND_SQMI", "AWATER_SQMI", "INTPTLAT", "INTPTLONG"],
     rows: 3222,
     zipSha256: "4c90d0f805779923b5958ab13d0c1e9b99fe4932b786bfcf75dd739bb2dcb4ea",
+    textSha256: "1914f0d83243362de83b8ddd298c213b1768d63d62d19464743289abd8bb35b1",
   },
 };
 
@@ -127,8 +129,10 @@ function buildSql(states, counties) {
   return `-- Generated from the official 2025 U.S. Census Gazetteer files.
 -- States ZIP: https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_state_national.zip
 -- SHA-256: ${EXPECTED.states.zipSha256}
+-- Extracted text SHA-256: ${EXPECTED.states.textSha256}
 -- Counties ZIP: https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_counties_national.zip
 -- SHA-256: ${EXPECTED.counties.zipSha256}
+-- Extracted text SHA-256: ${EXPECTED.counties.textSha256}
 -- The Gazetteer covers the 50 states, D.C., and Puerto Rico; other island
 -- areas remain explicit unavailable fallbacks until an official seed is added.
 begin;
@@ -249,8 +253,13 @@ export async function generate(args = process.argv.slice(2)) {
   if (dirname(output) !== allowedOutput || !/^0002_[a-z0-9_]+\.sql$/.test(basename(output))) {
     throw new Error("Output must be a new 0002_*.sql file under db/production-migrations.");
   }
-  if (await sha256(stateZip) !== EXPECTED.states.zipSha256 || await sha256(countyZip) !== EXPECTED.counties.zipSha256) {
-    throw new Error("Census Gazetteer ZIP hash mismatch.");
+  if (
+    await sha256(stateZip) !== EXPECTED.states.zipSha256 ||
+    await sha256(countyZip) !== EXPECTED.counties.zipSha256 ||
+    await sha256(stateText) !== EXPECTED.states.textSha256 ||
+    await sha256(countyText) !== EXPECTED.counties.textSha256
+  ) {
+    throw new Error("Census Gazetteer archive or extracted-text hash mismatch.");
   }
   const [states, counties] = await Promise.all([
     parsePipe(stateText, EXPECTED.states),

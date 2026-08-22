@@ -274,6 +274,9 @@ create table meta.publication_set_member (
   ),
   availability_reason text,
   primary key (publication_set_id, area_uid),
+  constraint publication_set_member_generation_area_fk
+    foreign key (generation_id, area_uid)
+    references meta.generation_jurisdiction(generation_id, area_uid),
   check ((availability_status = 'available') = (generation_id is not null)),
   check (
     availability_status = 'available'
@@ -308,6 +311,32 @@ begin
     raise exception 'national publication writes require transaction-local approval'
       using errcode = '55000';
   end if;
+
+  if tg_table_name = 'publication_set' then
+    if tg_op in ('UPDATE', 'DELETE')
+       and old.publication_status <> 'draft' then
+      raise exception 'finalized national publication sets are immutable'
+        using errcode = '55000';
+    end if;
+  elsif tg_table_name = 'publication_set_member' then
+    if tg_op in ('UPDATE', 'DELETE') and exists (
+      select 1 from meta.publication_set p
+      where p.publication_set_id = old.publication_set_id
+        and p.publication_status <> 'draft'
+    ) then
+      raise exception 'finalized national publication members are immutable'
+        using errcode = '55000';
+    end if;
+    if tg_op in ('INSERT', 'UPDATE') and exists (
+      select 1 from meta.publication_set p
+      where p.publication_set_id = new.publication_set_id
+        and p.publication_status <> 'draft'
+    ) then
+      raise exception 'members may only be written to draft national publications'
+        using errcode = '55000';
+    end if;
+  end if;
+
   return case when tg_op = 'DELETE' then old else new end;
 end;
 $function$;
@@ -481,7 +510,12 @@ select
   'available', active_property_count
 from meta.legacy_dc_binding;
 
-with member as (
+do $initial_publication$
+declare
+  v_generation_id bigint;
+  v_publication_set_id bigint;
+  v_publication_sha256 text;
+begin
   select
     b.generation_id,
     pg_catalog.encode(
@@ -490,30 +524,35 @@ with member as (
         'sha256'
       ),
       'hex'
-    ) as publication_sha256
+    )
+  into strict v_generation_id, v_publication_sha256
   from meta.legacy_dc_binding b
-  join meta.release_generation g using (generation_id)
-), publication as (
+  join meta.release_generation g using (generation_id);
+
   insert into meta.publication_set (
-    contract_version, publication_sha256, publication_status, activated_at
-  )
-  select
-    'national-v1', publication_sha256, 'active', pg_catalog.clock_timestamp()
-  from member
-  returning publication_set_id
-), publication_member as (
+    contract_version, publication_sha256, publication_status
+  ) values (
+    'national-v1', v_publication_sha256, 'draft'
+  ) returning publication_set_id into v_publication_set_id;
+
   insert into meta.publication_set_member (
     publication_set_id, area_uid, generation_id, availability_status
-  )
-  select p.publication_set_id, 'area_us_dc', m.generation_id, 'available'
-  from publication p cross join member m
-  returning publication_set_id
-)
-insert into meta.publication_set_pointer (
-  pointer_name, publication_set_id
-)
-select 'national-v1', publication_set_id
-from publication_member;
+  ) values (
+    v_publication_set_id, 'area_us_dc', v_generation_id, 'available'
+  );
+
+  update meta.publication_set
+  set publication_status = 'active',
+      activated_at = pg_catalog.clock_timestamp()
+  where publication_set_id = v_publication_set_id;
+
+  insert into meta.publication_set_pointer (
+    pointer_name, publication_set_id
+  ) values (
+    'national-v1', v_publication_set_id
+  );
+end;
+$initial_publication$;
 
 do $security$
 declare

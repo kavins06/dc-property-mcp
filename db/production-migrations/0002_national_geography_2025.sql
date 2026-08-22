@@ -1,8 +1,10 @@
 -- Generated from the official 2025 U.S. Census Gazetteer files.
 -- States ZIP: https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_state_national.zip
 -- SHA-256: 5c0bb56f4824af366538d73bffd229e790d301356624302eeca24d09cf27ba30
+-- Extracted text SHA-256: 0cbac15032fcbe2f0d3d1acee3066bbb30c00eadf2eed7b841f97ff368a79adf
 -- Counties ZIP: https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_counties_national.zip
 -- SHA-256: 4c90d0f805779923b5958ab13d0c1e9b99fe4932b786bfcf75dd739bb2dcb4ea
+-- Extracted text SHA-256: 1914f0d83243362de83b8ddd298c213b1768d63d62d19464743289abd8bb35b1
 -- The Gazetteer covers the 50 states, D.C., and Puerto Rico; other island
 -- areas remain explicit unavailable fallbacks until an official seed is added.
 begin;

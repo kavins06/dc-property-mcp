@@ -80,6 +80,17 @@ begin
     raise exception 'national foundation has unvalidated constraints';
   end if;
 
+  if not exists (
+    select 1
+    from pg_catalog.pg_constraint
+    where conrelid = 'meta.publication_set_member'::regclass
+      and conname = 'publication_set_member_generation_area_fk'
+      and contype = 'f'
+      and convalidated
+  ) then
+    raise exception 'publication members are not bound to generation jurisdiction';
+  end if;
+
   select count(*) into v_bad
   from pg_catalog.pg_class c
   join pg_catalog.pg_namespace n on n.oid = c.relnamespace
@@ -126,6 +137,21 @@ begin
     )
     values ('national-v1', repeat('0', 64), 'draft');
     raise exception 'publication guard accepted an unapproved write';
+  exception
+    when sqlstate '55000' then null;
+  end;
+
+
+  perform pg_catalog.set_config(
+    'quoin.national_publication_approval',
+    'NATIONAL_PUBLICATION_APPROVED:' || pg_catalog.txid_current()::text,
+    true
+  );
+  begin
+    update meta.publication_set_member
+    set availability_reason = 'forbidden in-place mutation'
+    where area_uid = 'area_us_dc';
+    raise exception 'active publication member was mutable in place';
   exception
     when sqlstate '55000' then null;
   end;

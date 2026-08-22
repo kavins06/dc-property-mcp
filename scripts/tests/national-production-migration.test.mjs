@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
@@ -18,7 +19,13 @@ const contract = readFileSync(
   "utf8",
 );
 
+const migrationSha256 = createHash("sha256").update(migration).digest("hex");
+
 test("national production foundation is independently fail-closed", () => {
+  assert.equal(
+    migrationSha256,
+    "b84cee659122185318d3abc11c2097a00949882586b45fefa140de0a702b2ffe",
+  );
   assert.match(migration, /current_database\(\) <> 'dc_property'/);
   assert.match(migration, /quoin\.migration_sha256/);
   assert.match(migration, /quoin\.migration_target_class/);
@@ -55,4 +62,20 @@ test("national runtime is function-only and initially D.C.-only", () => {
     contract,
     /runtime publication contains a non-D\.C\. available member/,
   );
+});
+
+test("national production rollbacks bind to exact reviewed migrations", () => {
+  for (const name of [
+    "0002_national_geography_2025.sql",
+    "0001_national_foundation.sql",
+  ]) {
+    const sql = readFileSync(
+      resolve(import.meta.dirname, "../../db/production-rollbacks", name),
+      "utf8",
+    );
+    assert.match(sql, /quoin\.rollback_sha256/);
+    assert.match(sql, /quoin\.rollback_target_class/);
+    assert.match(sql, /migration_sha256 = '[0-9a-f]{64}'/);
+    assert.match(sql, /pg_advisory_xact_lock/);
+  }
 });
