@@ -26,6 +26,12 @@ publisher, dataset, a human-facing official portal, exact lookup inputs, short
 verification steps, retrieval/archive timestamps, source release ID, file or
 release SHA-256, source row/record, and the property-link scope.
 
+National `sources` are projected from the immutable generation/source-release
+presentation snapshot. Publisher, dataset class, safe human URLs/terms, access
+status/method, and verification metadata are copied when the staged generation
+is built; mutable source-asset, access-policy, and route edits cannot change a
+published response.
+
 ## Reference formats
 
 ITSPE and CAMA facts retain the four-part reference:

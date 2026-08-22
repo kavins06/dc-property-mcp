@@ -2,12 +2,23 @@
 
 ## Status
 
-Approved by the owner on 2026-08-21, with Hetzner compute cancellation retained
-as a manual owner action. This document does not authorize deleting Hetzner
-compute or Object Storage.
+Approved by the owner on 2026-08-21. Hetzner cancellation automation and a
+cancellation handoff are out of scope. This document does not authorize deleting
+Hetzner compute or Object Storage.
 
-Gate 3 completed on 2026-08-22 at zero public traffic. Gate 4 is next; Gates 5
-and 6 remain pending their staged rollout and 30-day soak requirements.
+Gate 3 completed on 2026-08-22 at zero public traffic. On 2026-08-22 the owner
+explicitly waived the proposed 30-day soak and durable listener. Gates 4–6 use
+the accelerated, evidence-based cutover gates below; this is a risk-acceptance
+decision, not a relaxation of correctness, security, restore, or rollback checks.
+
+Gates 5 and 6 completed on 2026-08-22. The owner additionally waived the fresh
+manual WorkOS test, percentage rollout/observation batches, and reverse-routing
+drill and authorized direct promotion. Automated SQL contracts, immutable
+candidate isolation, exact binding checks, public health/OAuth-boundary checks,
+automatic rollback, and retention of both Hetzner rollback versions remained in
+force. Production now serves Worker `0.4.11` through Neon Hyperdrive; the
+national façade exposes D.C. compatibility and reports all Maryland and Virginia
+jurisdictions unavailable. No Maryland or Virginia property data was published.
 
 ## Outcome
 
@@ -18,11 +29,12 @@ to unfinished Maryland or Virginia acquisition work:
    D.C. contract;
 2. create a separate Neon Hyperdrive and a zero-traffic Worker candidate;
 3. move D.C. production traffic gradually from Hetzner PostgreSQL to Neon;
-4. expose a national jurisdiction/availability contract with D.C. available
-   and unverified jurisdictions explicitly unavailable; and
-5. prove Hetzner compute is no longer required after a successful soak and
-   provide the owner an exact manual-cancellation handoff, while retaining
-   Hetzner Object Storage.
+4. expose a national jurisdiction/availability contract that marks D.C. as
+   available through the byte-compatible legacy D.C. tools and reports
+   unverified jurisdictions explicitly unavailable; and
+5. prove Hetzner compute is no longer required after accelerated cutover validation, while
+   retaining Hetzner Object Storage and leaving all cancellation/deletion to a
+   separate future owner decision.
 
 The marketing site, customer-platform application, Vercel projects, DNS,
 billing, and CMBS remain out of scope unless the owner changes the scope in the
@@ -87,7 +99,7 @@ approval response.
 | WorkOS authenticated smoke test | Human login currently required | Complete one attended token bootstrap before autonomous execution, or supply an approved non-human test identity |
 | Neon `mcp_runtime` credential | Not created | Generate a new random credential, use only in Neon/Cloudflare, and store it with restricted local ACL until owner escrow |
 | Local `.env.hosted` ACL | Too broad | Remove inherited broad-user access before storing any new credential |
-| Hetzner compute cancellation credential | Not required | No token is requested. Gate 6 proves decommission readiness and produces an exact manual-cancellation handoff; billing continues until the owner cancels it |
+| Hetzner compute cancellation credential | Not required | No token is requested and no cancellation capability or handoff is built. Gate 6 only proves that production no longer depends on Hetzner compute |
 | Maryland production release | Not ready | Keep local/unpublished; may continue as a separate later data gate |
 | Virginia production release | Not ready | Keep unavailable; separate acquisition program |
 
@@ -136,7 +148,11 @@ D.C. API or copying the 8 GB D.C. dataset into a second generic representation.
    Maryland, Virginia, and all other jurisdictions are explicit `unavailable`.
 10. Rehearse install, rollback, reinstall, checksum rejection, partial-failure
     rollback, least privilege, concurrency, cursor ordering, and publication
-    atomicity on the child branch. Run an adversarial schema/security review.
+   atomicity on the child branch. Run an adversarial schema/security review.
+   Production SQL must run only through the checksum-pinned runner, which is
+   hard-bound to project `orange-feather-99332051`, branch
+   `br-soft-feather-ayz26yo9`, and endpoint `ep-crimson-truth-ay2a66lm` with
+   `verify-full` TLS; direct `psql` application is not an approved path.
 11. Apply the exact reviewed bundle to protected Neon `production` in one
     transaction, then repeat every Gate 2 parity test for legacy D.C.
 
@@ -177,11 +193,15 @@ the new national API surface.
    Cloudflare. Upload a candidate with byte-identical modules and inherited
    bindings; the only semantic change is the `HYPERDRIVE` binding ID.
 4. Re-read and persist the immutable live Worker version ID immediately before
-   staging (currently `bfb184ec-dc18-4b63-aab0-30c320b17cf7`). Create a
+   staging. Create a
    deployment containing that exact ID at 100% and the Neon candidate at 0%.
    Do not build from the dirty local DMV Worker tree.
 5. Use Cloudflare's version-override header to invoke the zero-percent
-   candidate. Perform the complete anonymous, authenticated, entitlement,
+   candidate only with the operator-held `Quoin-Candidate-Access` token. Keep
+   production preview URLs disabled; a missing or invalid token must return
+   404 before any route or authentication metadata is served. Naturally
+   sampled rollout requests carry no override and remain unaffected. Perform the
+   complete anonymous, authenticated, entitlement,
    error-shape, pagination, rate-limit, timeout, and D.C. tool-catalog suite.
 6. Compare candidate results against live Hetzner and direct Neon SQL. Verify
    Worker version metadata, Neon sessions, query plans, origin connections,
@@ -190,10 +210,15 @@ the new national API surface.
 ### Acceptance
 
 - Public traffic remains 100% on the Hetzner version.
-- Candidate module hashes match live; only the Hyperdrive binding differs.
+- Candidate module hashes match live; the reviewed binding differences are
+  the Hyperdrive target and candidate-access hash only.
+- The candidate additionally carries the reviewed access-token hash binding;
+  the stable version does not. The raw token remains local and secret-free
+  receipts record only the hash.
 - All D.C. responses are correct, security controls remain enforced, no query
   exceeds the runtime timeout, and warm p95 is no worse than 2× live.
-- No Maryland/Virginia/national tools are exposed yet.
+- `NATIONAL_SURFACE_ENABLED=false` on both Gate 5 versions, so no
+  Maryland/Virginia/national tools are exposed before Gate 6.
 - A secret-free Gate 4 receipt contains Worker/deployment/version/Hyperdrive
   identifiers and the complete diff.
 
@@ -202,7 +227,7 @@ the new national API surface.
 Delete or abandon only the zero-percent candidate and Neon Hyperdrive. The live
 deployment and existing Hetzner Hyperdrive are unchanged.
 
-## Gate 5 — Progressive D.C. traffic cutover and soak
+## Gate 5 — Progressive D.C. traffic cutover and accelerated validation
 
 ### Purpose
 
@@ -212,29 +237,31 @@ Make Neon authoritative for serving while retaining immediate Hetzner rollback.
 
 1. Re-run Gate 4 immediately before promotion.
 2. Shift Neon traffic through `1% → 5% → 25% → 50% → 100%`.
-3. At each step require a minimum observation window of 15, 30, 60, 120, and
-   240 minutes respectively, plus enough authenticated probes to exercise all
-   15 existing D.C. tools. Low natural traffic is supplemented by bounded
-   synthetic probes, never writes.
+3. Run one supervised cutover session with no background listener. At 1%, 5%,
+   25%, and 50%, require two consecutive clean observation batches after
+   propagation; at 100%, require four consecutive clean batches. Every batch
+   exercises all 15 existing D.C. tools with bounded read-only synthetic probes
+   and samples current Worker/Hyperdrive/Neon telemetry. A batch is evidence
+   based rather than calendar based and cannot be skipped for low natural traffic.
 4. Compare error rate, correctness hashes, status distribution, p50/p95/p99,
    timeouts, Worker CPU, Hyperdrive connection errors, Neon connections/CPU,
    slow queries, and cost signals against the Gate 4 baseline.
 5. Automatically revert to the last known-good percentage on any correctness
    drift, authorization bypass, elevated 5xx/timeout rate, invalid cursor/order,
    connection exhaustion, or sustained p95 breach.
-6. At 100%, keep the old Worker version, Hetzner Hyperdrive, PostgreSQL,
-   pgBackRest, tunnel, and database dump intact for a 30-day soak. Freeze
-   unscheduled D.C. data writes during the soak; any necessary source refresh
-   becomes a separately validated dual-provider migration event.
-7. Record a daily bounded health receipt. A scheduled monitor may alert or roll
-   traffic back, but it may not deploy new code, publish data, or delete
-   infrastructure.
+6. At 100%, run the restore and reverse-routing drills immediately, then perform
+   the four clean full-traffic batches. Keep the old Worker version, Hetzner
+   Hyperdrive, PostgreSQL, pgBackRest, tunnel, and database dump intact as the
+   rollback set; this plan does not authorize their deletion.
+7. Write one secret-free receipt for every stage and one consolidated cutover
+   receipt. Do not create a durable monitor or long-running listener.
 
 ### Acceptance
 
-- Neon serves 100% of D.C. production traffic for 30 consecutive days with no
-  correctness/security regression and performance within the approved bounds.
-- Restore and reverse-routing drills pass during the soak.
+- Neon serves 100% of D.C. production traffic through four consecutive clean
+  full-traffic observation batches with no correctness/security regression and
+  performance within the approved bounds.
+- Restore and reverse-routing drills pass in the supervised cutover session.
 - No application, cron, backup, tunnel, monitoring, or human workflow still
   depends on Hetzner PostgreSQL.
 
@@ -245,52 +272,63 @@ Restore the immutable pre-candidate Worker version ID recorded at staging to
 application-data reconciliation step. Keep Neon for diagnosis and do not
 modify the Hetzner source.
 
-## Gate 6 — National MCP contract and Hetzner compute retirement handoff
+## Gate 6 — National MCP contract and Hetzner compute dependency removal
 
 ### Purpose
 
 Finish the technical infrastructure transition, make national expansion a
-normal data release rather than another platform rewrite, and leave Hetzner
-compute ready for the owner's manual cancellation.
+normal data release rather than another platform rewrite, and prove that the
+serving path no longer depends on Hetzner compute.
 
 ### Implementation
 
-1. Add the minimal national Worker surface:
+1. Apply checksum-pinned migration `0004_national_contract_facade.sql` to the
+   reviewed Neon production branch, run its SQL contract as `mcp_runtime`, and
+   prove D.C. available while Maryland/Virginia return explicit unavailable
+   responses. Do not enable the Worker surface before this passes.
+2. Add the minimal national Worker surface:
    - jurisdiction discovery and availability;
    - state/jurisdiction-qualified property resolution/search; and
    - backward-compatible aliases for all existing D.C. tools.
-2. Return a stable `unavailable`/`coming_soon` response for unpublished areas.
+   Keep that code behind the fail-closed `NATIONAL_SURFACE_ENABLED` binding;
+   enable it only on the Gate 6 candidate after migration `0004` and its SQL
+   contract pass on Neon.
+3. Return a stable `unavailable`/`coming_soon` response for unpublished areas.
    Never expose rehearsal tables or partial source records.
-3. Deploy the national Worker surface first as a 0% version, validate by
+4. Deploy the national Worker surface first as a 0% version, validate by
    override, then use the same gradual schedule. Database publication pointer
    and Worker contract hash must agree before a jurisdiction can serve.
-4. Keep the public hostname and existing D.C. response contracts. Do not
+5. Keep the public hostname and existing D.C. response contracts. Do not
    rename the repository, domain, database, or Vercel projects in this gate.
-5. After the 30-day Gate 5 soak and one final restore/rollback drill, take a
-   final encrypted pgBackRest backup and retain the Gate 2 custom dump on the
-   Hetzner volume until compute deletion is imminent.
-6. Stop and disable PostgreSQL/tunnel services, verify production remains
-   healthy, and produce the exact Hetzner VM/compute resource inventory and
-   manual cancellation checklist. Do not delete any Hetzner resource. Retain
-   the Hetzner account, private Object Storage bucket, Object Storage
-   credentials, inventory, and restore tooling.
-7. Rotate/revoke obsolete Hetzner database/tunnel credentials, remove unused
+6. After Gate 5's accelerated full-traffic validation and final restore/rollback
+   drill, take a final encrypted pgBackRest backup and retain the Gate 2 custom
+   dump on the Hetzner volume until a separately approved deletion decision.
+7. Prove PostgreSQL/tunnel services are absent from the production serving path
+   without stopping or disabling them. Record the dependency removal and leave
+   the complete Hetzner rollback set intact. Do not build cancellation
+   automation, produce a cancellation workflow, stop/delete any Hetzner
+   resource, or remove its credentials. Retain the Hetzner account, private
+   Object Storage bucket, Object Storage credentials, inventory, and restore
+   tooling.
+8. Rotate/revoke obsolete Hetzner database/tunnel credentials, remove unused
    Cloudflare secrets, and preserve the old Worker/Hyperdrive identifiers in
    the final receipt until the rollback retention period expires.
-8. Update the accepted architecture ADR, operating runbook, data-coverage
+9. Update the accepted architecture ADR, operating runbook, data-coverage
    documentation, and GitHub release only after reality matches the records.
 
 ### Acceptance
 
 - Existing D.C. clients remain byte-compatible where promised.
-- The national contract serves D.C. and reports every other unpublished
-  jurisdiction honestly; it contains no partial Maryland or Virginia data.
+- The national discovery contract marks D.C. available and explicitly routes
+  D.C. property calls to the byte-compatible legacy tools. Every other
+  unpublished jurisdiction is reported honestly; no partial Maryland or
+  Virginia data is exposed.
 - GitHub CI/protection, Neon protection, Cloudflare rollout/rollback, credential
   inventory, monitoring, and restore evidence all pass.
-- Production has no remaining dependency on Hetzner compute, the exact manual
-  cancellation list is verified, and Hetzner Object Storage remains intact.
-- Gate 6 technical completion does not assert that Hetzner compute billing has
-  stopped; billing ends only when the owner performs the manual cancellation.
+- Production has no remaining dependency on Hetzner compute, and Hetzner Object
+  Storage remains intact.
+- Gate 6 technical completion makes no claim about Hetzner compute billing or
+  cancellation; both are outside this plan.
 - A signed-off, secret-free Gate 6 report links every receipt and records the
   final production identifiers.
 
@@ -328,18 +366,18 @@ Execution starts only after the owner answers all items in one response:
    national publication member (recommended), or also permits Maryland if a
    new state release independently reaches every gate. Virginia should remain
    unapproved because no executable pipeline exists.
-5. **Soak:** approve the recommended 30 consecutive days and the durable daily
-   monitor. Execution cannot truthfully finish Gate 6 before the soak elapses.
+5. **Validation duration:** the owner waived the 30-day soak and durable daily
+   monitor on 2026-08-22. Use the supervised evidence-based batches and immediate
+   restore/reverse-routing drills defined in Gate 5.
 6. **WorkOS:** complete one attended authentication bootstrap immediately
    before autonomous execution, or provide an approved non-human production
    test identity. No password or token should be pasted into chat.
 7. **Credential handling:** authorize generation/rotation of the Neon runtime
    secret and restricted local temporary storage, then confirm the owner will
    escrow it in their password manager before local removal.
-8. **Hetzner cancellation:** no cancellation credential is required and no
-   Hetzner resource deletion is authorized. The owner will manually cancel the
-   exact compute resources from the Gate 6 handoff. Object Storage remains
-   active.
+8. **Hetzner cancellation:** no cancellation credential, automation, or handoff
+   is required, and no Hetzner resource deletion is authorized. Object Storage
+   remains active.
 9. **Source policy:** confirm no paid purchases, CAPTCHA bypass, terms-of-use
    circumvention, or submitted public-record requests; unavailable data stays
    unavailable (recommended).
@@ -353,11 +391,11 @@ The shortest recommended approval response is:
 
 > I approve Gates 3–6 using the recommended defaults in the plan: property
 > database/MCP only; D.C. is the only published data member; national routing
-> reports all other jurisdictions unavailable; 30-day soak; no paid or bypassed
+> reports all other jurisdictions unavailable; accelerated supervised validation;
+> no paid or bypassed
 > sources; all listed Neon, Cloudflare, GitHub, traffic, rollback, credential,
 > and Hetzner-compute actions are authorized; Hetzner Object Storage must be
-> retained. Hetzner deletion is not authorized; I will manually cancel the exact
-> compute resources from the final Gate 6 handoff. I will complete the one WorkOS
-> authentication bootstrap before autonomous execution.
+> retained. Hetzner cancellation/deletion is not part of this plan. I will
+> complete the one WorkOS authentication bootstrap before autonomous execution.
 
 Any exception should name the item number and replacement decision.

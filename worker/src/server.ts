@@ -3,7 +3,7 @@ import { z } from "zod";
 import { callApi } from "./db";
 import type { Env } from "./types";
 
-export const SERVICE_VERSION = "0.4.10";
+export const SERVICE_VERSION = "0.4.11";
 export const MAX_TOOL_RESPONSE_BYTES = 768 * 1024;
 
 // McpServer output validation requires an object schema. A Zod record is not
@@ -12,6 +12,29 @@ const resultSchema = z.object({}).loose();
 const propertyInput = {
   ssl: z.string().trim().min(1).max(32).optional(),
   address: z.string().trim().min(2).max(160).optional(),
+};
+const nationalPropertyKinds = [
+  "tax_account",
+  "parcel",
+  "building",
+  "unit",
+  "land_interest",
+  "address",
+] as const;
+const nationalIdentityInput = {
+  state_code: z.enum(["DC", "MD", "VA"]),
+  fips_code: z.string().regex(/^\d{5}$/, "FIPS must be exactly five digits."),
+  property_kind: z.enum(nationalPropertyKinds),
+  // Trim transport whitespace, then preserve the identifier value exactly.
+  native_id: z.string().trim().min(1).max(256).optional(),
+  address: z.string().trim().min(2).max(160).optional(),
+};
+const nationalBuildingInput = {
+  state_code: z.enum(["DC", "MD", "VA"]),
+  fips_code: z.string().regex(/^\d{5}$/, "FIPS must be exactly five digits."),
+  source_record_key: z.string().trim().min(1).max(512).optional(),
+  native_account_id: z.string().trim().min(1).max(256).optional(),
+  camalink: z.string().trim().min(1).max(256).optional(),
 };
 const READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,
@@ -47,13 +70,51 @@ function toolResult(result: Record<string, unknown>) {
   };
 }
 
+function nationalConfigurationError(): Record<string, unknown> {
+  return {
+    status: "error",
+    error: {
+      code: "national_contract_not_configured",
+      hint: "The national publication contract is not configured. Retry shortly.",
+      retryable: true,
+    },
+  };
+}
+
+function nationalIdentityError(): Record<string, unknown> {
+  return {
+    status: "invalid_request",
+    error_code: "native_id_or_address_required",
+    hint: "Provide a native_id or address after selecting the jurisdiction and property kind.",
+  };
+}
+
+async function callNationalApi(
+  env: Env,
+  functionName:
+    | "resolve_national_property"
+    | "get_national_property"
+    | "get_national_building"
+    | "search_national_properties",
+  args: unknown[],
+): Promise<Record<string, unknown>> {
+  const contractVersion = env.NATIONAL_CONTRACT_VERSION?.trim();
+  if (!contractVersion) return nationalConfigurationError();
+  return callApi(env, functionName, [contractVersion, ...args]);
+}
+
 export function createServer(env: Env): McpServer {
+  const nationalSurfaceEnabled = env.NATIONAL_SURFACE_ENABLED === "true";
   const server = new McpServer(
     {
       name: "dc-property-records",
-      title: "Quoin Data — D.C. Property Records",
+      title: nationalSurfaceEnabled
+        ? "Quoin Data — D.C. Property Records & National Availability"
+        : "Quoin Data — D.C. Property Records",
       version: SERVICE_VERSION,
-      description: "Source-linked Washington, D.C. property-account records.",
+      description: nationalSurfaceEnabled
+        ? "Source-linked D.C. property-account records plus explicit national jurisdiction availability. Unpublished jurisdictions never fall back to partial data."
+        : "Source-linked Washington, D.C. property-account records.",
       websiteUrl: "https://quoindata.com/mcp",
       icons: [
         {
@@ -65,7 +126,9 @@ export function createServer(env: Env): McpServer {
     },
     {
       instructions:
-        "Read-only public D.C. property-account facts for commercial-real-estate lending. " +
+        (nationalSurfaceEnabled
+          ? "Read-only public property-account routing and facts for commercial-real-estate lending. Use the legacy D.C. tools for published D.C. records. National tools return explicit unavailable results until a state generation is published. "
+          : "Read-only public D.C. property-account facts for commercial-real-estate lending. ") +
         "Resolve identity before using facts; preserve fact-level dates, source references, " +
         "null meanings, proposed/current distinctions, and limitations. Never infer title, " +
         "lien priority, building metrics, NOI, occupancy, zoning compliance, or a lending decision. " +
@@ -304,6 +367,172 @@ export function createServer(env: Env): McpServer {
         await callApi(env, "search_properties", [JSON.stringify(input)]),
       ),
   );
+
+  if (nationalSurfaceEnabled) {
+  server.registerTool(
+    "list_national_jurisdictions",
+    {
+      title: "List National Jurisdictions",
+      description:
+        "List U.S. state, district, and territory routing areas with explicit publication availability. Omit state_code for the national list; this never implies that unpublished property records are available.",
+      inputSchema: {
+        state_code: z.string().trim().regex(/^[A-Za-z]{2}$/).optional(),
+      },
+      outputSchema: resultSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async ({ state_code }) =>
+      toolResult(
+        await callApi(env, "list_national_jurisdictions", [
+          state_code?.toUpperCase() ?? null,
+        ]),
+      ),
+  );
+
+  server.registerTool(
+    "list_national_subjurisdictions",
+    {
+      title: "List D.C., Maryland, or Virginia Jurisdictions",
+      description:
+        "List the official Census county or county-equivalent jurisdictions for D.C., Maryland, or Virginia, including stable area IDs, five-digit FIPS codes, and honest publication availability.",
+      inputSchema: { state_code: z.enum(["DC", "MD", "VA"]) },
+      outputSchema: resultSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async ({ state_code }) =>
+      toolResult(await callApi(env, "list_national_subjurisdictions", [state_code])),
+  );
+
+  server.registerTool(
+    "get_national_jurisdiction_availability",
+    {
+      title: "Get National Jurisdiction Availability",
+      description:
+        "Check whether one state or stable area ID has a published property generation. Unpublished jurisdictions return unavailable with a reason and never fall back to partial data.",
+      inputSchema: {
+        state_code: z.string().trim().regex(/^[A-Za-z]{2}$/),
+        area_uid: z.string().trim().regex(/^area_[a-z0-9_]+$/).optional(),
+      },
+      outputSchema: resultSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async ({ state_code, area_uid }) =>
+      toolResult(
+        await callApi(env, "get_national_jurisdiction_availability", [
+          state_code.toUpperCase(),
+          area_uid ?? null,
+        ]),
+      ),
+  );
+
+  server.registerTool(
+    "resolve_national_property",
+    {
+      title: "Resolve National Property",
+      description:
+        "Resolve one property identity within a state and five-digit Census jurisdiction when that jurisdiction has a published generation. D.C. compatibility remains on resolve_property; unpublished jurisdictions return unavailable. Native identifiers are matched verbatim.",
+      inputSchema: nationalIdentityInput,
+      outputSchema: resultSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async ({ state_code, fips_code, property_kind, native_id, address }) => {
+      if (!native_id && !address) return toolResult(nationalIdentityError());
+      return toolResult(
+        await callNationalApi(env, "resolve_national_property", [
+          state_code,
+          fips_code,
+          property_kind,
+          native_id ?? null,
+          address ?? null,
+        ]),
+      );
+    },
+  );
+
+  server.registerTool(
+    "get_national_property",
+    {
+      title: "Get National Property",
+      description:
+        "Return the generation-pinned record for one resolved national property when its jurisdiction is published. D.C. compatibility remains on get_complete_property_record and its domain tools; unpublished jurisdictions return unavailable and never substitute another property kind.",
+      inputSchema: nationalIdentityInput,
+      outputSchema: resultSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async ({ state_code, fips_code, property_kind, native_id, address }) => {
+      if (!native_id && !address) return toolResult(nationalIdentityError());
+      return toolResult(
+        await callNationalApi(env, "get_national_property", [
+          state_code,
+          fips_code,
+          property_kind,
+          native_id ?? null,
+          address ?? null,
+        ]),
+      );
+    },
+  );
+
+  server.registerTool(
+    "get_national_building",
+    {
+      title: "Get National Building",
+      description:
+        "Return one generation-pinned CAMA building observation when its jurisdiction is published, using a bounded source record key, exact native account ID, or exact CAMALINK. Unpublished jurisdictions return unavailable.",
+      inputSchema: nationalBuildingInput,
+      outputSchema: resultSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async ({ state_code, fips_code, source_record_key, native_account_id, camalink }) => {
+      if (!source_record_key && !native_account_id && !camalink) return toolResult({ status: "invalid_request", error_code: "building_lookup_key_required", property_kind: "building" });
+      return toolResult(
+        await callNationalApi(env, "get_national_building", [
+          state_code,
+          fips_code,
+          source_record_key ?? null,
+          native_account_id ?? null,
+          camalink ?? null,
+        ]),
+      );
+    },
+  );
+
+  server.registerTool(
+    "search_national_properties",
+    {
+      title: "Search National Properties",
+      description:
+        "Run a bounded exact search within one published Census jurisdiction and property kind. D.C. compatibility remains on search_properties; unpublished jurisdictions return unavailable. Results are generation-pinned and paginate only with an integrity-bound cursor.",
+      inputSchema: {
+        ...nationalIdentityInput,
+        limit: z.number().int().min(1).max(100).default(20),
+        cursor: z.string().trim().min(1).max(2048).optional(),
+      },
+      outputSchema: resultSchema,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
+    async ({
+      state_code,
+      fips_code,
+      property_kind,
+      native_id,
+      address,
+      limit,
+      cursor,
+    }) =>
+      toolResult(
+        await callNationalApi(env, "search_national_properties", [
+          state_code,
+          fips_code,
+          property_kind,
+          native_id ?? null,
+          address ?? null,
+          limit,
+          cursor ?? null,
+        ]),
+      ),
+  );
+  }
 
   server.registerTool(
     "get_source_evidence",

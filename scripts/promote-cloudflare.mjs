@@ -1,7 +1,12 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { parseEnv } from "node:util";
-import { createCloudflareClient } from "./lib/cloudflare.mjs";
+import {
+  assertExactDeployment,
+  createCloudflareClient,
+} from "./lib/cloudflare.mjs";
+import { assertDmvPublicationApproval } from "./lib/dmv-publication-approval.mjs";
 import { verifyLive } from "./verify-live.mjs";
 
 const project = resolve(import.meta.dirname, "..");
@@ -24,6 +29,9 @@ const candidatePath = resolve(
   `release-candidate-${packageJson.version}.json`,
 );
 const candidate = JSON.parse(readFileSync(candidatePath, "utf8"));
+const workerBytes = readFileSync(resolve(project, "worker", "dist", "worker.js"));
+const bundleSha256 = createHash("sha256").update(workerBytes).digest("hex");
+assertDmvPublicationApproval(env, { bundleSha256 });
 const accountId = env.CLOUDFLARE_ACCOUNT_ID;
 const token = env.CLOUDFLARE_API_TOKEN;
 const scriptName = config.name;
@@ -41,8 +49,10 @@ if (
   candidate.release !== packageJson.version ||
   !candidate.version ||
   !candidate.previous_version ||
-  !candidate.preview_url ||
-  candidate.verification_method !== "exact-version-preview"
+  candidate.bundle_sha256 !== bundleSha256 ||
+  candidate.verification_method !== "exact-version-override" ||
+  !["stable_replacement", "candidate"].includes(candidate.release_role) ||
+  (candidate.release_role === "candidate" && candidate.candidate_access_protected !== true)
 ) {
   throw new Error("The staged Worker candidate report is invalid.");
 }
@@ -50,20 +60,24 @@ if (
 const deploymentList = await cloudflare("/deployments");
 const activeDeployment =
   deploymentList.deployments?.[0] ?? deploymentList[0];
-const activeVersionIds = new Set(
-  (activeDeployment?.versions ?? []).map((entry) => entry.version_id),
+const stagedSplit = [
+  { version_id: candidate.previous_version, percentage: 100 },
+  { version_id: candidate.version, percentage: 0 },
+];
+assertExactDeployment(
+  activeDeployment,
+  candidate.staged_deployment,
+  stagedSplit,
 );
-if (
-  !activeVersionIds.has(candidate.version) ||
-  !activeVersionIds.has(candidate.previous_version)
-) {
-  throw new Error(
-    "The active deployment no longer matches the staged candidate and rollback pair.",
-  );
-}
 
 let promotedDeployment;
 try {
+  const promotionCheck = await cloudflare("/deployments");
+  assertExactDeployment(
+    promotionCheck.deployments?.[0] ?? promotionCheck[0],
+    candidate.staged_deployment,
+    stagedSplit,
+  );
   promotedDeployment = await createDeployment(
     [{ version_id: candidate.version, percentage: 100 }],
     releaseMessage,
@@ -75,6 +89,12 @@ try {
     scriptName,
     attempts: 50,
   });
+  const finalDeployment = await cloudflare("/deployments");
+  assertExactDeployment(
+    finalDeployment.deployments?.[0] ?? finalDeployment[0],
+    promotedDeployment.id,
+    [{ version_id: candidate.version, percentage: 100 }],
+  );
 } catch (error) {
   try {
     await createDeployment(
@@ -96,6 +116,7 @@ const result = {
   release: packageJson.version,
   previous_version: candidate.previous_version,
   version: candidate.version,
+  bundle_sha256: bundleSha256,
   staged_deployment: candidate.staged_deployment,
   production_deployment: promotedDeployment?.id ?? null,
   verified_at: new Date().toISOString(),

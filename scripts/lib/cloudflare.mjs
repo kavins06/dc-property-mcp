@@ -17,6 +17,7 @@ export function createCloudflareClient({
     const response = await fetch(`${base}${path}`, {
       ...options,
       headers,
+      signal: options.signal ?? AbortSignal.timeout(30_000),
     });
     const payload = await response.json();
     if (!response.ok || !payload.success) {
@@ -44,4 +45,37 @@ export function createCloudflareClient({
     });
 
   return { request, accountRequest, createDeployment };
+}
+
+export function assertExactDeployment(deployment, expectedId, expectedVersions) {
+  const actual = new Map(
+    (deployment?.versions ?? []).map(({ version_id, percentage }) => [
+      version_id,
+      percentage,
+    ]),
+  );
+  const expected = new Map(
+    expectedVersions.map(({ version_id, percentage }) => [version_id, percentage]),
+  );
+  if (
+    deployment?.id !== expectedId ||
+    deployment?.strategy !== "percentage" ||
+    actual.size !== expectedVersions.length ||
+    actual.size !== expected.size ||
+    [...expected].some(([id, percentage]) => actual.get(id) !== percentage)
+  ) {
+    throw new Error("The active Cloudflare deployment is not the exact reviewed deployment.");
+  }
+}
+
+export function assertVersionBindings(version, expectedBindings) {
+  const bindings = version?.resources?.bindings ?? version?.bindings ?? [];
+  for (const expected of expectedBindings) {
+    const actual = bindings.find(
+      (binding) => binding.type === expected.type && binding.name === expected.name,
+    );
+    if (actual?.id !== expected.id) {
+      throw new Error("Worker version does not use the reviewed binding set.");
+    }
+  }
 }

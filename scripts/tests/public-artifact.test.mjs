@@ -29,10 +29,17 @@ test("public README and registry metadata match the current MCP contract", async
     "get_building_and_land_profile",
     "get_source_evidence",
     "describe_data",
+    "list_national_jurisdictions",
+    "list_national_subjurisdictions",
+    "get_national_jurisdiction_availability",
+    "resolve_national_property",
+    "get_national_property",
+    "get_national_building",
+    "search_national_properties",
   ];
 
-  assert.match(readme, /15 read-only tools/);
-  assert.equal(publicTools.length, 15);
+  assert.match(readme, /22 read-only tools/);
+  assert.equal(publicTools.length, 22);
   for (const tool of publicTools) assert.match(readme, new RegExp(`\\b${tool}\\b`));
   assert.doesNotMatch(readme, /get_recorder_instrument_history/);
   assert.match(readme, /consumer-facing API access is by request/i);

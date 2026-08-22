@@ -25,6 +25,20 @@ const availabilityMigration = readFileSync(
   ),
   "utf8",
 );
+const facadeMigration = readFileSync(
+  resolve(
+    import.meta.dirname,
+    "../../db/production-migrations/0004_national_contract_facade.sql",
+  ),
+  "utf8",
+);
+const facadeRollback = readFileSync(
+  resolve(
+    import.meta.dirname,
+    "../../db/production-rollbacks/0004_national_contract_facade.sql",
+  ),
+  "utf8",
+);
 
 const migrationSha256 = createHash("sha256").update(migration).digest("hex");
 
@@ -50,6 +64,24 @@ test("national availability correction is checksum-pinned and fail-closed", () =
   );
   assert.match(availabilityMigration, /national-availability-reason-v1/);
   assert.match(availabilityMigration, /m\.availability_status = 'available'/);
+});
+
+test("national facade is unavailable-first and checksum-pinned", () => {
+  assert.equal(
+    createHash("sha256").update(facadeMigration).digest("hex"),
+    "e5f7f15ac71b0051220b50387c532886d8a81a8f0beeee1365dc5d3009998318",
+  );
+  assert.equal(
+    createHash("sha256").update(facadeRollback).digest("hex"),
+    "5b55075ef1d6e707c61d5cfede37b194f756de0463c3e43d4d3d2eb63212f0c9",
+  );
+  assert.match(facadeMigration, /national-contract-facade-v1/);
+  assert.match(facadeMigration, /list_national_subjurisdictions/);
+  assert.match(facadeMigration, /dc_legacy_route_required/);
+  assert.match(facadeMigration, /national_property_data_unavailable/);
+  assert.match(facadeMigration, /pg_catalog, api_v1, pg_temp/);
+  assert.match(facadeMigration, /grant execute on function api_v1\.resolve_national_property/);
+  assert.doesNotMatch(facadeMigration, /dc_property_dmv_rehearsal_20260819/);
 });
 
 test("national publication requires a transaction-local marker", () => {
@@ -82,6 +114,7 @@ test("national runtime is function-only and initially D.C.-only", () => {
 
 test("national production rollbacks bind to exact reviewed migrations", () => {
   for (const name of [
+    "0004_national_contract_facade.sql",
     "0003_national_availability_reason.sql",
     "0002_national_geography_2025.sql",
     "0001_national_foundation.sql",

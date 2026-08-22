@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   adminDatabaseConfig,
+  databaseSslMode,
   runtimeDatabaseConfig,
 } from "../lib/hosted-db.mjs";
 
@@ -29,6 +30,17 @@ test("runtime connections use the least-privileged runtime role", () => {
   assert.equal(config.host, "db.internal.example");
   assert.equal(config.user, "mcp_runtime");
   assert.equal(config.password, "runtime-secret");
+});
+
+test("Neon admin connections can assume the non-login ownership role", () => {
+  const config = adminDatabaseConfig({
+    ...environment,
+    DATABASE_ADMIN_LOGIN_USER: "neondb_owner",
+    DATABASE_ADMIN_LOGIN_PASSWORD: "neon-secret",
+  });
+
+  assert.equal(config.user, "neondb_owner");
+  assert.equal(config.password, "neon-secret");
 });
 
 test("explicit connection metadata and local no-TLS mode are supported", () => {
@@ -67,4 +79,10 @@ test("required metadata and unsafe SSL modes fail closed", () => {
     }),
     /DATABASE_SSL_MODE/,
   );
+});
+
+test("libpq child processes reuse the validated SSL mode", () => {
+  assert.equal(databaseSslMode({}), "verify-full");
+  assert.equal(databaseSslMode({ DATABASE_SSL_MODE: " REQUIRE " }), "require");
+  assert.equal(databaseSslMode({ DATABASE_SSL_MODE: "disable" }), "disable");
 });

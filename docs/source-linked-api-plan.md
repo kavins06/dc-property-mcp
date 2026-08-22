@@ -258,6 +258,9 @@ Acceptance:
 
 Verify:
 
+The deployment command below is post-approval only for the DMV expansion and
+fails closed without the owner-approval marker.
+
 ```powershell
 node --env-file=.env.hosted scripts/validate-migrations.mjs db/migrations/0030_*.sql --test <0030-contract-test>
 ```

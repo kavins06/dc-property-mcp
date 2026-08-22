@@ -1,7 +1,9 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { parseEnv } from "node:util";
 import { createCloudflareClient } from "./lib/cloudflare.mjs";
+import { assertDmvPublicationApproval } from "./lib/dmv-publication-approval.mjs";
 import { verifyLive } from "./verify-live.mjs";
 
 const project = resolve(import.meta.dirname, "..");
@@ -20,8 +22,12 @@ const accountId = env.CLOUDFLARE_ACCOUNT_ID;
 const token = env.CLOUDFLARE_API_TOKEN;
 const scriptName = config.name;
 const workerPath = resolve(project, "worker", "dist", "worker.js");
+const workerBytes = readFileSync(workerPath);
+const bundleSha256 = createHash("sha256").update(workerBytes).digest("hex");
+assertDmvPublicationApproval(env, { bundleSha256 });
 const baseUrl = new URL(config.vars.WORKOS_RESOURCE_URI).origin;
 const releaseMessage = `Release v${packageJson.version}: production hardening`;
+const stableHyperdriveId = "5fd47b059f824188998ad4ce9dc4503c";
 const argumentsList = process.argv.slice(2);
 if (
   argumentsList.length !== 1 ||
@@ -40,11 +46,15 @@ if (!scriptName || !config.main || !config.compatibility_date) {
 }
 const {
   request: cloudflare,
-  accountRequest: accountCloudflare,
   createDeployment,
 } = createCloudflareClient({ accountId, token, scriptName });
 
 function deploymentBindings() {
+  const candidateAccessToken = env.MCP_CANDIDATE_ACCESS_TOKEN;
+  const candidateRelease = config.hyperdrive?.[0]?.id !== stableHyperdriveId;
+  if (candidateRelease && (!candidateAccessToken || candidateAccessToken.length < 32)) {
+    throw new Error("Candidate releases require MCP_CANDIDATE_ACCESS_TOKEN.");
+  }
   return [
     ...(config.hyperdrive ?? []).map((binding) => ({
       type: "hyperdrive",
@@ -61,6 +71,11 @@ function deploymentBindings() {
       name,
       text,
     })),
+    ...(candidateRelease ? [{
+      type: "plain_text",
+      name: "CANDIDATE_ACCESS_SHA256",
+      text: createHash("sha256").update(candidateAccessToken).digest("hex"),
+    }] : []),
     ...(config.ratelimits ?? []).map((binding) => ({
       type: "ratelimit",
       name: binding.name,
@@ -70,33 +85,11 @@ function deploymentBindings() {
   ];
 }
 
-async function enableExactVersionPreviews() {
+async function assertVersionPreviewsDisabled() {
   const current = await cloudflare("/subdomain");
-  if (current.previews_enabled) return;
-  await cloudflare("/subdomain", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      enabled: Boolean(current.enabled),
-      previews_enabled: true,
-    }),
-  });
-}
-
-async function getExactVersionPreviewUrl(versionId) {
-  const versions = await accountCloudflare(
-    `/workers/workers/${scriptName}/versions`,
-  );
-  const version = versions.find((entry) => entry.id === versionId);
-  const previewUrl = version?.urls?.find((url) =>
-    url.startsWith("https://"),
-  );
-  if (!previewUrl) {
-    throw new Error(
-      `Cloudflare did not expose an exact preview URL for version ${versionId}.`,
-    );
+  if (current.previews_enabled) {
+    throw new Error("Production Worker preview URLs must remain disabled.");
   }
-  return new URL(previewUrl).origin;
 }
 
 const deploymentList = await cloudflare("/deployments");
@@ -109,7 +102,7 @@ if (!stableVersion) {
   throw new Error("No active Worker version is available for rollback.");
 }
 
-await enableExactVersionPreviews();
+await assertVersionPreviewsDisabled();
 
 const metadata = {
   main_module: "worker.js",
@@ -129,7 +122,7 @@ form.append(
 );
 form.append(
   "worker.js",
-  new Blob([readFileSync(workerPath)], {
+  new Blob([workerBytes], {
     type: "application/javascript+module",
   }),
   "worker.js",
@@ -141,7 +134,6 @@ const uploaded = await cloudflare("/versions?bindings_inherit=strict", {
 });
 const newVersion = uploaded.id;
 if (!newVersion) throw new Error("Cloudflare did not return a Worker version ID.");
-const previewUrl = await getExactVersionPreviewUrl(newVersion);
 
 let staged = false;
 let stagedDeployment;
@@ -159,10 +151,11 @@ try {
   // globally before the version-override header is honored.
   await new Promise((resolveDelay) => setTimeout(resolveDelay, 5_000));
   await verifyLive({
-    baseUrl: previewUrl,
+    baseUrl,
     expectedVersion: packageJson.version,
     expectedResourceUrl: config.vars.WORKOS_RESOURCE_URI,
     scriptName,
+    versionId: newVersion,
     attempts: 20,
   });
 } catch (error) {
@@ -188,8 +181,13 @@ const result = {
   release: packageJson.version,
   previous_version: stableVersion,
   version: newVersion,
-  preview_url: previewUrl,
-  verification_method: "exact-version-preview",
+  bundle_sha256: bundleSha256,
+  preview_url: null,
+  verification_method: "exact-version-override",
+  candidate_access_protected: config.hyperdrive?.[0]?.id !== stableHyperdriveId,
+  release_role: config.hyperdrive?.[0]?.id === stableHyperdriveId
+    ? "stable_replacement"
+    : "candidate",
   staged_deployment: stagedDeployment?.id ?? null,
   production_deployment: null,
   verified_at: new Date().toISOString(),

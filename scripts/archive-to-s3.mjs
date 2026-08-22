@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
   createReadStream,
   createWriteStream,
@@ -20,6 +20,7 @@ import {
 import {
   inventoryArchiveInputs,
   materializePart,
+  finalizeAcquisitionArchiveBinding,
   sha256File,
   validateArchiveReceipt,
   withArchiveTemporaryDirectory,
@@ -33,11 +34,13 @@ function usage() {
     "Usage:",
     "  node --env-file=.env.hosted scripts/archive-to-s3.mjs \\",
     "    --prefix <prefix> \\",
-    "    --input <project-relative-file-or-directory> [--input ...]",
+    "    --input <project-relative-file-or-directory> [--input ...] \\",
+    "    [--acquisition-manifest <project-relative-manifest> \\",
+    "     --acquisition-artifact <project-relative-artifact>]",
     "",
     "The bucket defaults to HETZNER_S3_BUCKET. Every object is content-",
     "addressed, downloaded after upload, and checked against its local SHA-256.",
-    "Files over 250 MiB are split into ordered parts.",
+    "Files over 8 MiB are split into ordered parts.",
   ].join("\n");
 }
 
@@ -45,6 +48,31 @@ function requiredEnvironment(environment, name) {
   const value = environment[name]?.trim();
   if (!value) throw new Error(`${name} is required for S3 archival.`);
   return value;
+}
+
+export function archiveEncryption(environment = process.env) {
+  const keyBase64 = requiredEnvironment(
+    environment,
+    "ARCHIVE_SSE_C_KEY_BASE64",
+  );
+  const key = Buffer.from(keyBase64, "base64");
+  if (key.length !== 32 || key.toString("base64") !== keyBase64) {
+    throw new Error(
+      "ARCHIVE_SSE_C_KEY_BASE64 must be canonical base64 for exactly 32 bytes.",
+    );
+  }
+  return {
+    receipt: {
+      mode: "SSE-C",
+      algorithm: "AES256",
+      key_sha256: createHash("sha256").update(key).digest("hex"),
+    },
+    request: {
+      SSECustomerAlgorithm: "AES256",
+      SSECustomerKey: keyBase64,
+      SSECustomerKeyMD5: createHash("md5").update(key).digest("base64"),
+    },
+  };
 }
 
 export function s3ClientConfig(environment = process.env) {
@@ -71,6 +99,8 @@ export function parseArchiveArguments(argumentsList, environment = process.env) 
     bucket: environment.HETZNER_S3_BUCKET?.trim() || null,
     prefix: null,
     inputs: [],
+    acquisitionManifest: null,
+    acquisitionArtifact: null,
     help: false,
   };
   for (let index = 0; index < argumentsList.length; index += 1) {
@@ -79,7 +109,13 @@ export function parseArchiveArguments(argumentsList, environment = process.env) 
       options.help = true;
       continue;
     }
-    if (["--bucket", "--prefix", "--input"].includes(argument)) {
+    if ([
+      "--bucket",
+      "--prefix",
+      "--input",
+      "--acquisition-manifest",
+      "--acquisition-artifact",
+    ].includes(argument)) {
       const value = argumentsList[index + 1];
       if (!value || value.startsWith("--")) {
         throw new Error(`${argument} requires a value.`);
@@ -87,7 +123,11 @@ export function parseArchiveArguments(argumentsList, environment = process.env) 
       if (argument === "--input") {
         options.inputs.push(value);
       } else {
-        const key = argument.slice(2);
+        const key = argument === "--acquisition-manifest"
+          ? "acquisitionManifest"
+          : argument === "--acquisition-artifact"
+            ? "acquisitionArtifact"
+            : argument.slice(2);
         if (options[key]) throw new Error(`${argument} may be supplied only once.`);
         options[key] = value;
       }
@@ -104,7 +144,25 @@ export function parseArchiveArguments(argumentsList, environment = process.env) 
       "A bucket, --prefix, and at least one --input are required.",
     );
   }
+  if (Boolean(options.acquisitionManifest) !== Boolean(options.acquisitionArtifact)) {
+    throw new Error("--acquisition-manifest and --acquisition-artifact must be supplied together.");
+  }
   return options;
+}
+
+export async function finalizeVerifiedAcquisitionArchive({ options, receiptPath, projectRoot = project }) {
+  const hasManifest = Boolean(options.acquisitionManifest);
+  const hasArtifact = Boolean(options.acquisitionArtifact);
+  if (!hasManifest && !hasArtifact) return null;
+  if (!hasManifest || !hasArtifact) {
+    throw new Error("Acquisition archive binding requires both the manifest and artifact paths.");
+  }
+  return finalizeAcquisitionArchiveBinding({
+    projectRoot,
+    manifestPath: resolve(projectRoot, options.acquisitionManifest),
+    artifactPath: resolve(projectRoot, options.acquisitionArtifact),
+    receiptPath,
+  });
 }
 
 async function uploadAndVerify(
@@ -113,6 +171,7 @@ async function uploadAndVerify(
   objectKey,
   localPath,
   temporaryDirectory,
+  encryptionRequest,
 ) {
   const localStat = await stat(localPath);
   const localHash = await sha256File(localPath);
@@ -125,7 +184,8 @@ async function uploadAndVerify(
     Metadata: {
       "dc-property-sha256": localHash,
     },
-  }));
+    ...encryptionRequest,
+  }), { abortSignal: AbortSignal.timeout(30 * 60 * 1000) });
 
   const downloaded = resolve(
     temporaryDirectory,
@@ -135,7 +195,8 @@ async function uploadAndVerify(
     const response = await client.send(new GetObjectCommand({
       Bucket: bucket,
       Key: objectKey,
-    }));
+      ...encryptionRequest,
+    }), { abortSignal: AbortSignal.timeout(30 * 60 * 1000) });
     if (!response.Body) {
       throw new Error(`S3 returned no body for ${objectKey}.`);
     }
@@ -167,6 +228,7 @@ async function uploadAndVerify(
 
 export async function archiveToS3(options, environment = process.env) {
   const client = new S3Client(s3ClientConfig(environment));
+  const encryption = archiveEncryption(environment);
   const receipt = validateArchiveReceipt(
     await inventoryArchiveInputs(project, options.inputs, {
       bucket: options.bucket,
@@ -174,6 +236,7 @@ export async function archiveToS3(options, environment = process.env) {
       provider: "hetzner_object_storage",
       endpoint: requiredEnvironment(environment, "HETZNER_S3_ENDPOINT"),
       region: requiredEnvironment(environment, "HETZNER_S3_REGION"),
+      encryption: encryption.receipt,
     }),
   );
   try {
@@ -183,39 +246,62 @@ export async function archiveToS3(options, environment = process.env) {
         (total, file) => total + file.parts.length,
         0,
       );
-      for (const file of receipt.files) {
+      const tasks = receipt.files.flatMap((file) => {
         const sourcePath = resolve(project, ...file.relative_path.split("/"));
-        for (const part of file.parts) {
-          const localPath =
-            file.parts.length === 1
-              ? sourcePath
-              : await materializePart(sourcePath, part, temporaryDirectory);
-          const verified = await uploadAndVerify(
-            client,
-            options.bucket,
-            part.object_key,
-            localPath,
-            temporaryDirectory,
-          );
-          if (
-            verified.sha256 !== part.sha256 ||
-            verified.bytes !== part.bytes
-          ) {
-            throw new Error(
-              `Receipt mismatch after S3 verification for ${part.object_key}.`,
-            );
+        return file.parts.map((part) => ({ file, sourcePath, part }));
+      });
+      let nextTask = 0;
+      let workerFailure;
+      async function worker() {
+        while (!workerFailure && nextTask < tasks.length) {
+          const { file, sourcePath, part } = tasks[nextTask++];
+          try {
+            const localPath =
+              file.parts.length === 1
+                ? sourcePath
+                : await materializePart(sourcePath, part, temporaryDirectory);
+            let verified;
+            try {
+              for (let attempt = 1; attempt <= 3; attempt += 1) {
+                try {
+                  verified = await uploadAndVerify(
+                    client,
+                    options.bucket,
+                    part.object_key,
+                    localPath,
+                    temporaryDirectory,
+                    encryption.request,
+                  );
+                  break;
+                } catch (error) {
+                  if (attempt === 3) throw error;
+                  process.stdout.write(
+                    `S3 retry ${attempt}/2: ${file.relative_path} part ${part.part_number}\n`,
+                  );
+                }
+              }
+              if (verified.sha256 !== part.sha256 || verified.bytes !== part.bytes) {
+                throw new Error(
+                  `Receipt mismatch after S3 verification for ${part.object_key}.`,
+                );
+              }
+              completedParts += 1;
+              process.stdout.write(
+                `S3 verified ${completedParts}/${totalParts}: ` +
+                  `${file.relative_path} part ${part.part_number}/` +
+                  `${file.parts.length}\n`,
+              );
+            } finally {
+              if (file.parts.length > 1) await rm(localPath, { force: true });
+            }
+          } catch (error) {
+            workerFailure ??= error;
+            throw error;
           }
-          if (file.parts.length > 1) {
-            await rm(localPath, { force: true });
-          }
-          completedParts += 1;
-          process.stdout.write(
-            `S3 verified ${completedParts}/${totalParts}: ` +
-              `${file.relative_path} part ${part.part_number}/` +
-              `${file.parts.length}\n`,
-          );
         }
       }
+      await Promise.allSettled(Array.from({ length: 3 }, () => worker()));
+      if (workerFailure) throw workerFailure;
 
       const localReceipt = await writeDeterministicReceipt(
         receipt,
@@ -227,20 +313,27 @@ export async function archiveToS3(options, environment = process.env) {
         receipt.receipt_object_key,
         localReceipt.path,
         temporaryDirectory,
+        encryption.request,
       );
       if (verifiedReceipt.sha256 !== localReceipt.sha256) {
         throw new Error("Remote S3 archive receipt SHA-256 differs from local.");
       }
+      const archiveBinding = await finalizeVerifiedAcquisitionArchive({
+        options,
+        receiptPath: localReceipt.path,
+      });
       return {
         success: true,
         provider: "hetzner_object_storage",
         endpoint: environment.HETZNER_S3_ENDPOINT,
         region: environment.HETZNER_S3_REGION,
         bucket: options.bucket,
+        encryption: receipt.encryption,
         archive_id: receipt.archive_id,
         receipt_path: localReceipt.path,
         receipt_sha256: localReceipt.sha256,
         receipt_object_key: receipt.receipt_object_key,
+        acquisition_archive_binding_path: archiveBinding?.path ?? null,
         file_count: receipt.files.length,
         part_count: totalParts,
         total_bytes: receipt.files.reduce(

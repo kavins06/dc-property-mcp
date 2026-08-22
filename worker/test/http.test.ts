@@ -1,10 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker, {
   allowedOrigin,
+  candidateAccessAllowed,
+  batchLimitError,
   boundedMcpRequest,
+  boundedMcpResponse,
   highCostRequestCount,
   isHighCostRequest,
+  jsonRpcBatchSize,
+  generalRateLimitChargeCount,
   PayloadTooLargeError,
+  rpcToolCallCount,
 } from "../src/index";
 import type { Env } from "../src/types";
 
@@ -21,6 +27,36 @@ afterEach(() => {
 });
 
 describe("HTTP boundary", () => {
+  it("keeps staged candidate versions operator-only", async () => {
+    const token = "candidate-access-token-with-at-least-32-bytes";
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+    const candidateEnv = {
+      ...env,
+      CANDIDATE_ACCESS_SHA256: Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, "0"),
+      ).join(""),
+    } as Env;
+
+    await expect(candidateAccessAllowed(
+      new Request("https://mcp.example.com/healthz", {
+        headers: {
+          "Cloudflare-Workers-Version-Overrides": "dc-property-mcp=\"candidate\"",
+        },
+      }), candidateEnv,
+    )).resolves.toBe(false);
+    await expect(candidateAccessAllowed(
+      new Request("https://mcp.example.com/healthz", {
+        headers: {
+          "Cloudflare-Workers-Version-Overrides": "dc-property-mcp=\"candidate\"",
+          "Quoin-Candidate-Access": token,
+        },
+      }), candidateEnv,
+    )).resolves.toBe(true);
+    await expect(candidateAccessAllowed(
+      new Request("https://mcp.example.com/healthz"), candidateEnv,
+    )).resolves.toBe(true);
+  });
+
   it("adds defensive headers without exposing a request ID", async () => {
     vi.spyOn(console, "log").mockImplementation(() => undefined);
     const response = await worker.fetch(
@@ -32,7 +68,7 @@ describe("HTTP boundary", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       service: "dc-property-mcp",
-      version: "0.4.10",
+      version: "0.4.11",
     });
     expect(response.headers.get("x-request-id")).toBeNull();
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
@@ -225,6 +261,67 @@ describe("HTTP boundary", () => {
     });
 
     await expect(highCostRequestCount(request)).resolves.toBe(2);
+  });
+
+  it("protects all national tools with high-cost accounting", async () => {
+    for (const name of [
+      "resolve_national_property",
+      "get_national_property",
+      "get_national_building",
+      "search_national_properties",
+    ]) {
+      const request = new Request("https://mcp.example.com/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "tools/call",
+          params: { name, arguments: {} },
+          id: 1,
+        }),
+      });
+      await expect(highCostRequestCount(request)).resolves.toBe(1);
+    }
+  });
+
+  it("rejects oversized JSON-RPC batches before MCP dispatch", async () => {
+    const request = new Request("https://mcp.example.com/mcp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([
+        { jsonrpc: "2.0", method: "tools/call", params: { name: "describe_data" }, id: 1 },
+        { jsonrpc: "2.0", method: "tools/call", params: { name: "describe_data" }, id: 2 },
+        { jsonrpc: "2.0", method: "tools/call", params: { name: "describe_data" }, id: 3 },
+        { jsonrpc: "2.0", method: "tools/call", params: { name: "describe_data" }, id: 4 },
+        { jsonrpc: "2.0", method: "tools/call", params: { name: "describe_data" }, id: 5 },
+      ]),
+    });
+
+    await expect(jsonRpcBatchSize(request)).resolves.toBe(5);
+    const error = batchLimitError(5);
+    expect(error?.status).toBe(413);
+    await expect(error?.json()).resolves.toEqual({
+      error: "jsonrpc_batch_limit_exceeded",
+    });
+    await expect(rpcToolCallCount(request)).resolves.toBe(5);
+  });
+
+  it("allows only bounded batches and caps aggregate responses", async () => {
+    expect(batchLimitError(4)).toBeNull();
+    expect(batchLimitError(null)).toBeNull();
+
+    const response = await boundedMcpResponse(
+      new Response("0123456789"),
+      4,
+    );
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      error: "response_too_large",
+      hint: "Reduce the batch size or request a smaller page.",
+      limits: { max_response_bytes: 4 },
+    });
+    expect(generalRateLimitChargeCount(0)).toBe(1);
+    expect(generalRateLimitChargeCount(4)).toBe(4);
   });
 
   it("converts unexpected upstream failures to a generic response", async () => {

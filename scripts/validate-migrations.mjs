@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
-import { isAbsolute, relative, resolve } from "node:path";
+import { basename, isAbsolute, relative, resolve } from "node:path";
 import { parseEnv } from "node:util";
 import pg from "../loader/node_modules/pg/lib/index.js";
 import { adminDatabaseConfig } from "./lib/hosted-db.mjs";
+import { requireDmvRehearsalTarget } from "../loader/dmv-rehearsal-target.mjs";
+import { DMV_REHEARSAL_TARGET_CONTRACT } from "../loader/dmv-rehearsal-target.contract.mjs";
 
 const project = resolve(import.meta.dirname, "..");
 const migrationRoot = resolve(project, "db", "migrations");
@@ -28,11 +30,6 @@ if (
   );
 }
 
-const env = parseEnv(
-  readFileSync(resolve(project, ".env.hosted"), "utf8"),
-);
-const databaseEnvironment = { ...env, ...process.env };
-
 const migrations = requested.map((requestedPath) => {
   const path = resolve(project, requestedPath);
   const candidate = relative(migrationRoot, path);
@@ -47,8 +44,30 @@ const migrations = requested.map((requestedPath) => {
   const sql = readFileSync(path, "utf8")
     .replace(/^\s*begin;\s*/i, "")
     .replace(/\s*commit;\s*$/i, "");
-  return { requestedPath, sql };
+  const migrationNumber = Number(basename(path).slice(0, 4));
+  return { requestedPath, migrationNumber, sql };
 });
+
+const validatesDmvSql = migrations.some(({ migrationNumber }) => migrationNumber >= 35);
+// DMV validation must never inherit hosted credentials or a hosted database
+// name from .env.hosted.  The caller must provide the exact rehearsal target
+// environment explicitly (normally via node --env-file=.env.rehearsal).
+const databaseEnvironment = validatesDmvSql
+  ? { ...process.env }
+  : {
+      ...parseEnv(readFileSync(resolve(project, ".env.hosted"), "utf8")),
+      ...process.env,
+    };
+if (validatesDmvSql) {
+  if (
+    databaseEnvironment.DMV_REHEARSAL_ONLY !== "true"
+    || databaseEnvironment.DMV_REHEARSAL_DATABASE_NAME !== DMV_REHEARSAL_TARGET_CONTRACT.database_name
+    || String(databaseEnvironment.DMV_REHEARSAL_DATABASE_OID) !== DMV_REHEARSAL_TARGET_CONTRACT.database_oid
+    || databaseEnvironment.DMV_REHEARSAL_SYSTEM_IDENTIFIER !== DMV_REHEARSAL_TARGET_CONTRACT.system_identifier
+  ) {
+    throw new Error("DMV migration validation requires the explicit exact isolated rehearsal environment; .env.hosted is not accepted.");
+  }
+}
 
 let contract = null;
 if (requestedTest) {
@@ -80,6 +99,13 @@ const client = new pg.Client({
 
 await client.connect();
 try {
+  if (validatesDmvSql) {
+    await requireDmvRehearsalTarget(
+      client,
+      DMV_REHEARSAL_TARGET_CONTRACT.database_name,
+      databaseEnvironment,
+    );
+  }
   await client.query("begin");
   for (const migration of migrations) {
     await client.query(migration.sql);

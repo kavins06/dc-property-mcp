@@ -160,6 +160,27 @@ describe("source enrichment helpers", () => {
       refs.slice(100),
     ]);
   });
+
+  it("normalizes set-like source details independently of database row order", () => {
+    expect(
+      mergeSourceEvidence([
+        {
+          evidence: [],
+          sources: [{
+            link: "https://example.com",
+            covers: ["Tax", "Assessment"],
+            covered_fields: ["tax.current", "assessment.current"],
+            source_refs: ["source-z", "source-a"],
+          }],
+        },
+      ]).sources,
+    ).toEqual([{
+      link: "https://example.com",
+      covers: ["Assessment", "Tax"],
+      covered_fields: ["assessment.current", "tax.current"],
+      source_refs: ["source-a", "source-z"],
+    }]);
+  });
 });
 
 describe("source enrichment database boundary", () => {
@@ -233,7 +254,7 @@ describe("source enrichment database boundary", () => {
         {
           link: "https://one.example",
           covers: ["Assessment", "Tax"],
-          source_refs: refs,
+          source_refs: refs.slice().sort(),
         },
       ],
     });
@@ -332,5 +353,39 @@ describe("source enrichment database boundary", () => {
       status: "error",
       error: { code: "provenance_unavailable" },
     });
+  });
+});
+
+describe("national API database boundary", () => {
+  it("routes generation-pinned national calls with exact argument order", async () => {
+    const payload = {
+      status: "resolved",
+      state_code: "MD",
+      fips_code: "24031",
+      property_kind: "tax_account",
+      native_id: "000123",
+      provenance: [{ ref: "v2:binding" }],
+    };
+    connect.mockResolvedValue(undefined);
+    end.mockResolvedValue(undefined);
+    query
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ result: payload }] });
+
+    await expect(
+      callApi(env, "get_national_property", [
+        "national-v1",
+        "MD",
+        "24031",
+        "tax_account",
+        "000123",
+        null,
+      ]),
+    ).resolves.toEqual(payload);
+
+    expect(query).toHaveBeenNthCalledWith(2,
+      "select api_v1.get_national_property($1, $2, $3, $4, $5, $6) as result",
+      ["national-v1", "MD", "24031", "tax_account", "000123", null],
+    );
   });
 });

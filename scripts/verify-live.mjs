@@ -11,11 +11,19 @@ function delay(milliseconds) {
   return new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
 }
 
+function timedFetch(url, options = {}) {
+  return fetch(url, {
+    ...options,
+    signal: options.signal ?? AbortSignal.timeout(30_000),
+  });
+}
+
 export async function verifyLive({
   baseUrl = "https://mcp.quoindata.com",
   expectedVersion = packageJson.version,
   expectedResourceUrl = `${baseUrl}/mcp`,
   versionId,
+  candidateAccessToken = process.env.MCP_CANDIDATE_ACCESS_TOKEN,
   scriptName = "dc-property-mcp",
   attempts = 15,
 } = {}) {
@@ -24,11 +32,14 @@ export async function verifyLive({
     headers["Cloudflare-Workers-Version-Overrides"] =
       `${scriptName}="${versionId}"`;
   }
+  if (candidateAccessToken) {
+    headers["Quoin-Candidate-Access"] = candidateAccessToken;
+  }
 
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      const healthResponse = await fetch(
+      const healthResponse = await timedFetch(
         `${baseUrl}/healthz?verification=${crypto.randomUUID()}`,
         { headers },
       );
@@ -55,7 +66,7 @@ export async function verifyLive({
         throw new Error("healthz exposes an internal request identifier");
       }
 
-      const metadataResponse = await fetch(
+      const metadataResponse = await timedFetch(
         `${baseUrl}/.well-known/oauth-protected-resource`,
         { headers },
       );
@@ -69,7 +80,7 @@ export async function verifyLive({
         throw new Error("protected-resource metadata is invalid");
       }
 
-      const authorizationResponse = await fetch(
+      const authorizationResponse = await timedFetch(
         `${baseUrl}/.well-known/oauth-authorization-server`,
         { headers },
       );
@@ -83,7 +94,7 @@ export async function verifyLive({
         throw new Error("authorization-server metadata proxy is invalid");
       }
 
-      const mcpResponse = await fetch(`${baseUrl}/mcp`, { headers });
+      const mcpResponse = await timedFetch(`${baseUrl}/mcp`, { headers });
       const challenge = mcpResponse.headers.get("www-authenticate") ?? "";
       if (
         mcpResponse.status !== 401 ||
@@ -92,7 +103,7 @@ export async function verifyLive({
         throw new Error("unauthenticated MCP boundary did not return its OAuth challenge");
       }
 
-      const blockedOriginResponse = await fetch(`${baseUrl}/mcp`, {
+      const blockedOriginResponse = await timedFetch(`${baseUrl}/mcp`, {
         headers: { ...headers, Origin: "https://untrusted.example.com" },
       });
       if (blockedOriginResponse.status !== 403) {

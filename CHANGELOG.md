@@ -1,5 +1,12 @@
 # Changelog
 
+# 0.4.11 — 2026-08-22
+
+- Route D.C. production reads through Neon Hyperdrive.
+- Add the national jurisdiction and availability façade while keeping Maryland
+  and Virginia property data unavailable.
+- Keep candidate versions isolated and preview URLs disabled.
+
 ## 0.4.10 — 2026-08-14
 
 - Added the OpenAI domain-verification challenge route, backed by a secret

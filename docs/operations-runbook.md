@@ -6,7 +6,7 @@
 - Health: `https://mcp.quoindata.com/healthz`
 - Authentication: WorkOS AuthKit
 - Database: PostgreSQL 18 on Hetzner through Hyperdrive and Workers VPC
-- Contract: v0.4.10, 15 read-only MCP tools
+- Contract: v0.4.11, 22 read-only MCP tools (15 D.C. tools plus 7 national routing/availability tools)
 
 A healthy unauthenticated MCP request returns `401` with a
 `WWW-Authenticate` link to protected-resource metadata.
@@ -15,15 +15,19 @@ A healthy unauthenticated MCP request returns `401` with a
 
 - PostgreSQL cluster: `18/dcproperty`, loopback port 5434
 - Hetzner Hyperdrive: `5fd47b059f824188998ad4ce9dc4503c`
-- Supabase rollback Hyperdrive: `a9ec4dc6114e4057a11bea66b8fe50b3`
+- Immutable Hetzner Worker rollback version:
+  `bfb184ec-dc18-4b63-aab0-30c320b17cf7`
+- Neon candidate Hyperdrive: `d4524b1f397a454da9f9b37105d8d399`
+- Supabase legacy Hyperdrive (not a Gate 5 rollback target):
+  `a9ec4dc6114e4057a11bea66b8fe50b3`
 - Workers VPC service: `019faa01-7a77-7ac3-83c4-40c9439e5499`
 - Cloudflare Tunnel: `279f1681-2ce0-43f8-8c4c-d85ec4bc0a22`
 - WorkOS resource: `https://mcp.quoindata.com/mcp`
 - Alert destination: `kavins@quoindata.com`
 
-Worker version and deployment IDs are recorded in
-`db/reports/generated/release-0.4.0.json` after promotion. The previous Worker
-and Supabase Hyperdrive remain rollback targets during the bake period.
+Worker version and deployment IDs are recorded in the gate receipt. During the
+Neon soak, the immutable pre-candidate Worker and its Hetzner Hyperdrive remain
+the rollback pair; the Supabase Hyperdrive is legacy inventory only.
 
 ## Release gates
 
@@ -89,6 +93,40 @@ blue-green target. The loader will not replace current pointers in place.
 Provider: private Hetzner S3-compatible Object Storage, bucket `quoindata`,
 region `fsn1`.
 
+Gate 1 read-only baseline (2026-08-21T19:36:15.736Z): endpoint
+`https://fsn1.your-objectstorage.com`, 9,651 objects, 142,610,527,372 bytes,
+and canonical inventory SHA-256
+`868c40c81375889fcdf55342840915b4a6833548dbc892e123f755fb66acdb70` on both
+inventory passes. There were no additions, deletions, or mutations between
+passes. The complete local report is
+`db/reports/generated/hetzner-archive-gate1-20260821T193615Z.json` with
+SHA-256
+`be57dfd746bb9e13e9cec0938a2b7956a7210c4dc326300861b1c335b84fc035`.
+The report covered 48 local receipts (5 legacy v1 and 43 encrypted v2) and
+2,525 remote objects; all 48 receipt objects matched their local bytes and
+stored SHA metadata. The bucket remained private, versioning disabled, Object
+Lock absent, with lifecycle `raw-batches-90d` expiring `raw-batches/` after 90
+days. This verifier is strictly read-only; no existing Hetzner object was
+deleted, overwritten, or otherwise mutated.
+
+The archive SSE-C fingerprint recorded by the verifier is
+`ac98a65226deb6d486d9b54627da1229b6f425da9bbfab5377541a64dab820c2`.
+Restore evidence is recorded at
+`db/reports/generated/hetzner-gate1-restore-evidence-20260821T194203Z.json`
+with SHA-256
+`cbd2d6b79658083790366b63db36940f37d252947cb135409f7afec2e0895304`.
+The complete v1 receipt and restored archive each contain 67 files, 68 parts,
+and 651,908,507 bytes. Their canonical receipt-file metadata SHA-256 is
+`15d7b6fafc06f9e882e55e5ee7b5ae5ce0cea5bb9fe65c06b3405bcc0832b00a`; this
+hash covers sorted `{path,bytes,sha256}` receipt records, not concatenated
+file bytes. The application-backup subset contains 37 files, 38 parts, and
+651,415,561 bytes, with restored-file metadata SHA-256
+`df6ea6e68e4f4653dca80367c00e57b1c330f8eafc3e7badccdfb931341bfbcb`.
+The read-only pgBackRest evidence is at
+`db/reports/generated/hetzner-gate1-pgbackrest-20260821T193630Z.json` with
+SHA-256
+`4f5acf83d039669f6a12602a4de147004deb0eca9469286d64a43ddeba47045f`.
+
 - Raw regulatory archive ID:
   `201fff966baff319ae051291e6d43428cdcf6b4eb809ab3d3f2b550183e6319f`
 - Application backup/restore archive ID:
@@ -105,8 +143,13 @@ Archive new reviewed inputs with:
 ```powershell
 node --env-file=.env.hosted scripts\archive-to-s3.mjs `
   --prefix <reviewed-prefix> `
-  --input <project-relative-path>
+  --input <project-relative-path> `
+  [--acquisition-manifest <manifest> --acquisition-artifact <artifact>]
 ```
+
+For an acquisition handoff, provide both explicit manifest and artifact paths.
+The verified archive command then creates the immutable archive-binding sidecar
+required by downstream loaders; unrelated archives receive no binding.
 
 The command succeeds only after downloading and hashing every uploaded part.
 
@@ -149,7 +192,61 @@ verified.
 Backup integrity is not a substitute for restore testing. Repeat the isolated
 restore after every material schema or backup-format change.
 
+### Gate 1 archive recovery commands
+
+Use explicit temporary directories outside the repository. Before any
+recursive cleanup, resolve and inspect the target path; remove it only after
+the restore and verification succeed.
+
+```powershell
+$legacyTemp = Join-Path $env:TEMP 'quoin-gate1-legacy-v1-20260821T193615Z'
+$legacyTemp = [IO.Path]::GetFullPath($legacyTemp)
+if ($legacyTemp -notlike "$env:TEMP*") { throw 'Unexpected legacy temp path' }
+New-Item -ItemType Directory -Force $legacyTemp | Out-Null
+node --env-file=.env.hosted scripts\restore-s3-archive.mjs `
+  --from-s3 --allow-legacy-v1 `
+  --receipt archive-receipts\239af8ba54aa196442c765ea3d4d8356dab9b34e4b868a74dfb29c041fe6a420.json `
+  --output $legacyTemp
+node scripts\verify-application-backup.mjs `
+  "$legacyTemp\application-backups\application-v0.4.0-20260728"
+Get-ChildItem $legacyTemp -Recurse -File | Get-FileHash -Algorithm SHA256
+
+$v2Temp = Join-Path $env:TEMP 'quoin-gate1-v2-20260821T193615Z'
+$v2Temp = [IO.Path]::GetFullPath($v2Temp)
+if ($v2Temp -notlike "$env:TEMP*") { throw 'Unexpected v2 temp path' }
+New-Item -ItemType Directory -Force $v2Temp | Out-Null
+node --env-file=.env.hosted scripts\restore-s3-archive.mjs `
+  --from-s3 `
+  --receipt archive-receipts\7af869679b6b346cf634e1c5763647e9aa95d09ea5fc2b54fd9c376aef65b5a6.json `
+  --output $v2Temp
+Get-ChildItem $v2Temp -Recurse -File | Get-FileHash -Algorithm SHA256
+```
+
+After successful evidence capture, verify both resolved paths again before
+`Remove-Item -LiteralPath $legacyTemp,$v2Temp -Recurse -Force`.
+
+### Key escrow checkpoint
+
+The archive SSE-C and pgBackRest cipher secrets are present and their recorded
+fingerprints are, respectively,
+`ac98a65226deb6d486d9b54627da1229b6f425da9bbfab5377541a64dab820c2` and
+`6cf0294a4945eb7051f2cf097c1da175e274cf8c0e25da624673926752805c51`. External
+password-manager escrow is not complete because no password-manager connector
+or removable drive is available. This is the sole manual Gate 1 checkpoint.
+In a trusted local terminal, copy the archive SSE-C secret from the protected
+`.env.hosted` file and the pgBackRest cipher secret from the server's protected
+`/etc/dc-property-mcp/pgbackrest.conf` directly into the password manager
+without printing either value. Use the password manager's secure
+clipboard/import flow or another non-echoing secure channel. Never paste either
+secret into chat, shell history, a report, or a normal clipboard, and clear any
+secure clipboard after storage. Gate 1 remains pending until the owner confirms
+password-manager storage.
+
 ## Staged deployment and authenticated verification
+
+Do not execute this section for the DMV expansion until the owner explicitly
+approves publication. The deployment helpers require the post-approval marker
+and otherwise fail before any Cloudflare mutation.
 
 ```powershell
 node scripts\deploy-cloudflare.mjs --stage-only
@@ -157,7 +254,7 @@ $env:MCP_AUTH_SERVER_URL="https://mcp.quoindata.com/mcp"
 node scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node scripts\promote-cloudflare.mjs
-node scripts\verify-live.mjs 0.4.10
+node scripts\verify-live.mjs 0.4.11
 node scripts\verify-authenticated-mcp.mjs
 ```
 
@@ -199,14 +296,66 @@ no OOM events occur. Resize only on measured sustained pressure.
    edge/OAuth failures from PostgreSQL failures.
 3. For a Worker regression, restore the previous Worker version recorded in
    the release report.
-4. For a Hetzner database-path regression, bind a rollback Worker version to
-   Supabase Hyperdrive `a9ec4dc6114e4057a11bea66b8fe50b3` and verify it before
-   promotion.
+4. For a Neon database-path regression, deploy immutable Worker version
+   `bfb184ec-dc18-4b63-aab0-30c320b17cf7` at 100%. It is already bound to
+   Hetzner Hyperdrive `5fd47b059f824188998ad4ce9dc4503c`; verify the binding
+   and exact deployment state after rollback.
 5. Do not expose PostgreSQL or grant direct table privileges as a workaround.
 6. For data recovery, restore the pgBackRest repository to the selected
    timestamp or rebuild from the verified application backup and canonical
    release archive.
 7. Document cause, impact window, recovery evidence, and prevention.
+
+### DMV schema rollback
+
+Use the prior Worker/database pair for an ordinary release regression. Remove
+the DMV schema only when abandoning an unpublished DMV release or after a
+verified restore has been selected. Before running any down migration:
+
+1. stop DMV writers and roll the Worker back;
+2. record and clear `current`, `candidate`, and `previous` rows from
+   `meta.publication_set_pointer` in a controlled transaction;
+3. verify the latest encrypted backup and its isolated restore evidence;
+4. run rollbacks in exact reverse migration order: `0040`, `0039`, `0038`,
+   `0037`, `0036`, then `0035`; and
+5. compare the resulting schema dump with the captured pre-migration dump.
+
+The destructive acknowledgements are session-local safeguards. Set them only
+in the operator session that immediately runs the reviewed rollback files:
+
+```sql
+set quoin.confirm_dmv_api_rollback = 'DROP_PUBLISHED_DMV_API';
+set quoin.confirm_dmv_data_rollback = 'DROP_STAGED_DMV_DATA';
+\i db/rollbacks/0040_md_cama_buildings.sql
+set quoin.confirm_dmv_api_rollback = 'DROP_PUBLISHED_AND_STAGED_DMV_API';
+\i db/rollbacks/0039_md_coverage_and_parcel_api.sql
+set quoin.confirm_dmv_api_rollback = 'DROP_PUBLISHED_DMV_API';
+\i db/rollbacks/0038_md_parcel_identity.sql
+\i db/rollbacks/0037_national_api.sql
+\i db/rollbacks/0036_national_property_record.sql
+\i db/rollbacks/0035_national_identity_and_release.sql
+```
+
+The 0039 rollback requires the combined acknowledgement when either a
+publication pointer or staged/validated Maryland generation data exists. Do not clear
+that acknowledgement by placing it in a role, database, pool, or Worker
+configuration; set it only in the operator session that immediately runs the
+reviewed rollback chain.
+
+Rehearse the exact chain with `scripts/validate-migration-rollback.mjs` on a
+schema clone whose name starts with `dc_property_dmv_rollback_` before a
+production migration.
+
+Migration `0042_md_local_context_checkpoint_namespace.sql` is an exception to
+the ordinary rollback rule. Its rollback never deletes checkpoint rows. If
+`md_local_context:%` rows exist, it intentionally retains the expanded phase
+constraint (and therefore cannot claim byte-for-byte schema equality). Run an
+uncommitted `0042` check against the fixed isolated DMV rehearsal database,
+or run `scripts/validate-migration-rollback.mjs --committed-disposable` on a
+disposable database named `dc_property_dmv_rollback_<suffix>`; the latter sets
+the transaction-local marker accepted by both 0042 guards. With zero namespaced rows, exact schema equality is required. After a local load, treat
+the constraint-only rollback as the documented, non-equality-preserving
+policy.
 
 Recovery objectives:
 

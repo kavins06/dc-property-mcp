@@ -21,7 +21,11 @@ const callbackPort = Number(process.env.MCP_OAUTH_CALLBACK_PORT ?? 8765);
 const callbackTimeoutSeconds = Number(
   process.env.MCP_OAUTH_CALLBACK_TIMEOUT_SECONDS ?? 600,
 );
+const requestTimeoutSeconds = Number(
+  process.env.MCP_HTTP_TIMEOUT_SECONDS ?? 60,
+);
 const versionOverride = process.env.MCP_WORKER_VERSION_OVERRIDE;
+const candidateAccessToken = process.env.MCP_CANDIDATE_ACCESS_TOKEN;
 const isCandidate = Boolean(versionOverride) || authServerUrl.origin !== serverUrl.origin;
 if (
   versionOverride &&
@@ -30,6 +34,9 @@ if (
   )
 ) {
   throw new Error("MCP_WORKER_VERSION_OVERRIDE must be a Worker version UUID.");
+}
+if (versionOverride && (!candidateAccessToken || candidateAccessToken.length < 32)) {
+  throw new Error("MCP_CANDIDATE_ACCESS_TOKEN is required for exact-version verification.");
 }
 if (
   !Number.isSafeInteger(callbackTimeoutSeconds) ||
@@ -40,7 +47,14 @@ if (
     "MCP_OAUTH_CALLBACK_TIMEOUT_SECONDS must be an integer from 60 to 1800.",
   );
 }
-const callbackUrl = `http://localhost:${callbackPort}/callback`;
+if (
+  !Number.isSafeInteger(requestTimeoutSeconds) ||
+  requestTimeoutSeconds < 5 ||
+  requestTimeoutSeconds > 300
+) {
+  throw new Error("MCP_HTTP_TIMEOUT_SECONDS must be an integer from 5 to 300.");
+}
+const callbackUrl = `http://127.0.0.1:${callbackPort}/callback`;
 async function loggingFetch(input, init = {}) {
   const requestUrl = new URL(
     input instanceof Request ? input.url : input.toString(),
@@ -53,8 +67,15 @@ async function loggingFetch(input, init = {}) {
       "Cloudflare-Workers-Version-Overrides",
       `dc-property-mcp="${versionOverride}"`,
     );
+    headers.set("Quoin-Candidate-Access", candidateAccessToken);
   }
-  const response = await fetch(input, { ...init, headers });
+  const inheritedSignal = init.signal ??
+    (input instanceof Request ? input.signal : undefined);
+  const timeoutSignal = AbortSignal.timeout(requestTimeoutSeconds * 1000);
+  const signal = inheritedSignal
+    ? AbortSignal.any([inheritedSignal, timeoutSignal])
+    : timeoutSignal;
+  const response = await fetch(input, { ...init, headers, signal });
   if (!response.ok) {
     const details = await response
       .clone()
@@ -85,6 +106,16 @@ const callbackPromise = new Promise((resolve, reject) => {
 
 const callbackServer = createServer((request, response) => {
   const url = new URL(request.url ?? "/", callbackUrl);
+  if (request.socket.remoteAddress !== "127.0.0.1") {
+    response.writeHead(403);
+    response.end("Forbidden");
+    return;
+  }
+  if (request.method !== "GET") {
+    response.writeHead(405, { Allow: "GET" });
+    response.end("Method not allowed");
+    return;
+  }
   if (url.pathname === "/favicon.ico") {
     response.writeHead(404);
     response.end();
@@ -123,7 +154,7 @@ const callbackServer = createServer((request, response) => {
 await new Promise((resolve, reject) => {
   callbackServer.once("error", reject);
   callbackServer.listen(
-    { port: callbackPort, host: "::", ipv6Only: false },
+    { port: callbackPort, host: "127.0.0.1" },
     resolve,
   );
 });
@@ -259,6 +290,13 @@ const expectedTools = [
   "search_properties",
   "get_source_evidence",
   "describe_data",
+  "list_national_jurisdictions",
+  "list_national_subjurisdictions",
+  "get_national_jurisdiction_availability",
+  "resolve_national_property",
+  "get_national_property",
+  "get_national_building",
+  "search_national_properties",
 ];
 const regulatoryTools = new Set([
   "get_permit_history",
@@ -318,7 +356,52 @@ const probes = [
     "describe_data",
     { question: "What property_type values can search_properties use?" },
   ],
+  ["list_national_jurisdictions", { state_code: "DC" }],
+  ["list_national_subjurisdictions", { state_code: "MD" }],
+  ["get_national_jurisdiction_availability", { state_code: "MD" }],
+  [
+    "resolve_national_property",
+    { state_code: "MD", fips_code: "24031", property_kind: "tax_account", native_id: "unpublished" },
+    ["unavailable"],
+  ],
+  [
+    "get_national_property",
+    { state_code: "MD", fips_code: "24031", property_kind: "tax_account", native_id: "unpublished" },
+    ["unavailable"],
+  ],
+  [
+    "get_national_building",
+    { state_code: "MD", fips_code: "24031", source_record_key: "unpublished" },
+    ["unavailable"],
+  ],
+  [
+    "search_national_properties",
+    { state_code: "VA", fips_code: "51510", property_kind: "parcel", native_id: "unpublished", limit: 1 },
+    ["unavailable"],
+  ],
 ];
+
+function probeStatus(name, payload) {
+  if (
+    name === "list_national_jurisdictions" &&
+    Array.isArray(payload) && payload.length === 1 &&
+    payload[0]?.state_code === "DC" && payload[0]?.availability === "available"
+  ) return "ok";
+  if (
+    name === "list_national_subjurisdictions" &&
+    payload?.status === "ok" && payload?.state_code === "MD" &&
+    Array.isArray(payload.jurisdictions) && payload.jurisdictions.length === 24 &&
+    payload.jurisdictions.every(
+      (item) => item?.state_code === "MD" && item?.availability === "unavailable",
+    )
+  ) return "ok";
+  if (
+    name === "get_national_jurisdiction_availability" &&
+    payload?.state_code === "MD" && payload?.availability === "unavailable"
+  ) return "ok";
+  if (typeof payload?.status === "string") return payload.status;
+  return undefined;
+}
 
 let transport;
 let authTransport;
@@ -360,15 +443,21 @@ try {
   const statuses = {};
   const responseSha256 = {};
   let saleSourceRef;
-  for (const [name, args] of probes) {
+  for (const [name, args, acceptedStatuses = ["resolved", "ok"]] of probes) {
+    const warmup = structured(await client.callTool({ name, arguments: args }));
+    const warmupStatus = probeStatus(name, warmup);
+    if (!acceptedStatuses.includes(warmupStatus)) {
+      throw new Error(`${name} warmup returned unexpected status ${warmupStatus}`);
+    }
     const started = performance.now();
     const result = await client.callTool({ name, arguments: args });
     timings[name] = Number((performance.now() - started).toFixed(1));
     const payload = structured(result);
-    statuses[name] = payload.status;
+    const status = probeStatus(name, payload);
+    statuses[name] = status;
     responseSha256[name] = responseHash(payload);
-    if (!["resolved", "ok"].includes(payload.status)) {
-      throw new Error(`${name} returned unexpected status ${payload.status}`);
+    if (!acceptedStatuses.includes(status)) {
+      throw new Error(`${name} returned unexpected status ${status}`);
     }
     if (
       sourcedTools.has(name) &&
@@ -412,9 +501,19 @@ try {
   }
 
   const evidenceStarted = performance.now();
+  const evidenceArguments = { source_refs: [saleSourceRef] };
+  const evidenceWarmup = structured(
+    await client.callTool({
+      name: "get_source_evidence",
+      arguments: evidenceArguments,
+    }),
+  );
+  if (evidenceWarmup.status !== "ok") {
+    throw new Error("Live sale evidence warmup failed.");
+  }
   const evidenceResult = await client.callTool({
     name: "get_source_evidence",
-    arguments: { source_refs: [saleSourceRef] },
+    arguments: evidenceArguments,
   });
   timings.get_source_evidence = Number(
     (performance.now() - evidenceStarted).toFixed(1),
@@ -440,6 +539,7 @@ try {
     worker_version_override: versionOverride ?? null,
     tool_count: toolNames.length,
     tool_metadata_validated: true,
+    warmup_completed: true,
     tools: toolNames,
     statuses,
     response_sha256: responseSha256,

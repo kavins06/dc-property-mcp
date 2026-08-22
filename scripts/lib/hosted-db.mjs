@@ -15,15 +15,20 @@ function databasePort(environment) {
   return port;
 }
 
-function databaseSsl(environment) {
+export function databaseSslMode(environment = process.env) {
   const mode = environment.DATABASE_SSL_MODE?.trim().toLowerCase() ||
     "verify-full";
-  if (mode === "disable") return false;
-  if (mode === "require") return { rejectUnauthorized: false };
-  if (mode === "verify-full") return { rejectUnauthorized: true };
+  if (["disable", "require", "verify-full"].includes(mode)) return mode;
   throw new Error(
     "DATABASE_SSL_MODE must be disable, require, or verify-full.",
   );
+}
+
+function databaseSsl(environment) {
+  const mode = databaseSslMode(environment);
+  if (mode === "disable") return false;
+  if (mode === "require") return { rejectUnauthorized: false };
+  return { rejectUnauthorized: true };
 }
 
 function commonDatabaseConfig(environment) {
@@ -36,10 +41,14 @@ function commonDatabaseConfig(environment) {
 }
 
 export function adminDatabaseConfig(environment = process.env) {
+  const role = environment.DATABASE_ADMIN_USER?.trim() || "dc_property_admin";
+  const loginUser = environment.DATABASE_ADMIN_LOGIN_USER?.trim() || role;
   return {
     ...commonDatabaseConfig(environment),
-    user: environment.DATABASE_ADMIN_USER?.trim() || "dc_property_admin",
-    password: requireValue(environment, "DATABASE_ADMIN_PASSWORD"),
+    user: loginUser,
+    password: loginUser === role
+      ? requireValue(environment, "DATABASE_ADMIN_PASSWORD")
+      : requireValue(environment, "DATABASE_ADMIN_LOGIN_PASSWORD"),
   };
 }
 

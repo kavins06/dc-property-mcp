@@ -5,6 +5,8 @@ import { captureToolSuccesses, toolCalls } from "./analytics";
 import type { Env } from "./types";
 
 const MAX_MCP_REQUEST_BYTES = 128 * 1024;
+export const MAX_JSON_RPC_BATCH_CALLS = 4;
+export const MAX_MCP_RESPONSE_BYTES = 768 * 1024;
 const LEGACY_PRODUCTION_HOST = "dc-property-mcp.quoindata.com";
 const MCP_ALLOWED_HEADERS = [
   "authorization",
@@ -35,6 +37,30 @@ function configuredOrigins(env: Env): string[] {
 export function allowedOrigin(request: Request, env: Env): boolean {
   const origin = request.headers.get("origin");
   return !origin || configuredOrigins(env).includes(origin);
+}
+
+export async function candidateAccessAllowed(
+  request: Request,
+  env: Env,
+): Promise<boolean> {
+  const expected = env.CANDIDATE_ACCESS_SHA256?.trim().toLowerCase();
+  if (!expected) return true;
+  if (!/^[0-9a-f]{64}$/.test(expected)) return false;
+  if (!request.headers.has("cloudflare-workers-version-overrides")) return true;
+  const token = request.headers.get("quoin-candidate-access");
+  if (!token || token.length > 512) return false;
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(token),
+  );
+  const actual = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  let difference = 0;
+  for (let index = 0; index < expected.length; index += 1) {
+    difference |= expected.charCodeAt(index) ^ actual.charCodeAt(index);
+  }
+  return difference === 0;
 }
 
 function appendVary(headers: Headers, value: string): void {
@@ -109,6 +135,10 @@ export async function boundedMcpRequest(
 
 const HIGH_COST_TOOLS = new Set([
   "search_properties",
+  "resolve_national_property",
+  "get_national_property",
+  "get_national_building",
+  "search_national_properties",
   "resolve_properties_batch",
   "get_permit_history",
   "get_license_history",
@@ -116,6 +146,54 @@ const HIGH_COST_TOOLS = new Set([
   "get_building_and_land_profile",
   "get_complete_property_record",
 ]);
+
+export async function jsonRpcBatchSize(
+  request: Request,
+): Promise<number | null> {
+  if (request.method !== "POST") return null;
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) return null;
+  try {
+    const body = await request.clone().json<unknown>();
+    return Array.isArray(body) ? body.length : null;
+  } catch {
+    return null;
+  }
+}
+
+export function batchLimitError(batchSize: number | null): Response | null {
+  if (
+    batchSize === null ||
+    (batchSize >= 1 && batchSize <= MAX_JSON_RPC_BATCH_CALLS)
+  ) {
+    return null;
+  }
+  return jsonError("jsonrpc_batch_limit_exceeded", 413, {
+    "Retry-After": "1",
+  });
+}
+
+export async function rpcToolCallCount(request: Request): Promise<number> {
+  if (request.method !== "POST") return 0;
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) return 0;
+  try {
+    const body = await request.clone().json<unknown>();
+    const messages = Array.isArray(body) ? body : [body];
+    return messages.filter(
+      (message) =>
+        message &&
+        typeof message === "object" &&
+        (message as { method?: unknown }).method === "tools/call",
+    ).length;
+  } catch {
+    return 0;
+  }
+}
+
+export function generalRateLimitChargeCount(toolCallCount: number): number {
+  return Math.max(1, toolCallCount);
+}
 
 export async function highCostRequestCount(
   request: Request,
@@ -151,6 +229,22 @@ export async function isHighCostRequest(
   request: Request,
 ): Promise<boolean> {
   return (await highCostRequestCount(request)) > 0;
+}
+
+export async function boundedMcpResponse(
+  response: Response,
+  maxBytes = MAX_MCP_RESPONSE_BYTES,
+): Promise<Response> {
+  const body = await response.clone().arrayBuffer();
+  if (body.byteLength <= maxBytes) return response;
+  return Response.json(
+    {
+      error: "response_too_large",
+      hint: "Reduce the batch size or request a smaller page.",
+      limits: { max_response_bytes: maxBytes },
+    },
+    { status: 413 },
+  );
 }
 
 async function authorizationMetadata(env: Env): Promise<Response> {
@@ -278,13 +372,6 @@ async function handleRequest(
   const key = Array.from(new Uint8Array(rateKey), (byte) =>
     byte.toString(16).padStart(2, "0"),
   ).join("");
-  if (env.GENERAL_RATE_LIMITER) {
-    const { success } = await env.GENERAL_RATE_LIMITER.limit({ key });
-    if (!success) {
-      return jsonError("rate_limit_exceeded", 429, { "Retry-After": "60" });
-    }
-  }
-
   if (request.method === "POST") {
     const contentType = request.headers.get("content-type") ?? "";
     if (!contentType.toLowerCase().includes("application/json")) {
@@ -302,6 +389,13 @@ async function handleRequest(
     throw error;
   }
 
+  const batchSize = await jsonRpcBatchSize(boundedRequest);
+  const batchError = batchLimitError(batchSize);
+  if (batchError) return batchError;
+
+  const calls = await toolCalls(boundedRequest);
+  const toolCallCount = await rpcToolCallCount(boundedRequest);
+
   if (env.SEARCH_RATE_LIMITER) {
     const highCostCalls = await highCostRequestCount(boundedRequest);
     for (let index = 0; index < highCostCalls; index += 1) {
@@ -314,13 +408,26 @@ async function handleRequest(
     }
   }
 
+  if (env.GENERAL_RATE_LIMITER) {
+    for (
+      let index = 0;
+      index < generalRateLimitChargeCount(toolCallCount);
+      index += 1
+    ) {
+      const { success } = await env.GENERAL_RATE_LIMITER.limit({ key });
+      if (!success) {
+        return jsonError("rate_limit_exceeded", 429, { "Retry-After": "60" });
+      }
+    }
+  }
+
   const server = createServer(env);
   const { createMcpHandler } = await import("agents/mcp");
-  const calls = await toolCalls(boundedRequest);
-  const response = await createMcpHandler(server, {
+  const mcpResponse = await createMcpHandler(server, {
     route: "/mcp",
     enableJsonResponse: true,
   })(boundedRequest, env, ctx);
+  const response = await boundedMcpResponse(mcpResponse);
   if (calls.length > 0) {
     const analytics = captureToolSuccesses(env, subject.sub, calls, response);
     if (typeof ctx.waitUntil === "function") ctx.waitUntil(analytics);
@@ -343,7 +450,9 @@ export default {
     let errorName: string | undefined;
 
     try {
-      response = await handleRequest(request, env, ctx);
+      response = await candidateAccessAllowed(request, env)
+        ? await handleRequest(request, env, ctx)
+        : jsonError("not_found", 404);
     } catch (error) {
       errorName = error instanceof Error ? error.name : "UnknownError";
       response = Response.json(

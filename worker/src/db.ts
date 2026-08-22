@@ -15,6 +15,13 @@ const ALLOWED_FUNCTIONS = new Set([
   "get_inspection_and_enforcement_history",
   "get_building_and_land_profile",
   "search_properties",
+  "list_national_jurisdictions",
+  "list_national_subjurisdictions",
+  "get_national_jurisdiction_availability",
+  "resolve_national_property",
+  "get_national_property",
+  "get_national_building",
+  "search_national_properties",
   "get_source_evidence",
   "describe_data",
 ]);
@@ -90,6 +97,14 @@ function stableJsonIdentity(value: unknown): string {
       );
     }) ?? "undefined"
   );
+}
+
+function sortStableValues(values: unknown[]): unknown[] {
+  return [...values].sort((left, right) => {
+    const leftIdentity = stableJsonIdentity(left);
+    const rightIdentity = stableJsonIdentity(right);
+    return leftIdentity < rightIdentity ? -1 : leftIdentity > rightIdentity ? 1 : 0;
+  });
 }
 
 function sourceRouteIdentity(source: unknown): string {
@@ -221,6 +236,20 @@ export function mergeSourceEvidence(responses: readonly unknown[]): {
           const existing = sourceByIdentity.get(identity);
           if (isRecord(existing)) mergeSourceDetails(existing, source);
         }
+      }
+    }
+  }
+
+  for (const item of provenance) {
+    if (isRecord(item) && Array.isArray(item.covered_fields)) {
+      item.covered_fields = sortStableValues(item.covered_fields);
+    }
+  }
+  for (const source of sources) {
+    if (!isRecord(source)) continue;
+    for (const key of SOURCE_DETAIL_KEYS) {
+      if (Array.isArray(source[key])) {
+        source[key] = sortStableValues(source[key]);
       }
     }
   }

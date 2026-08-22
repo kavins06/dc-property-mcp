@@ -53,10 +53,16 @@ project-relative inputs:
 ```powershell
 node --env-file=.env.hosted scripts\archive-to-s3.mjs `
   --prefix releases/v0.4.0/<archive-name> `
-  --input <project-relative-file-or-directory>
+  --input <project-relative-file-or-directory> `
+  [--acquisition-manifest <manifest> --acquisition-artifact <artifact>]
 ```
 
-The helper content-addresses files, splits files over 250 MiB, downloads every
+When archiving an acquisition, pass both explicit acquisition paths. After the
+receipt is verified, the command writes the immutable
+`<manifest>.archive-binding.json` sidecar used by downstream loaders. Archives
+without both paths do not create acquisition bindings.
+
+The helper content-addresses files into 8 MiB parts, downloads every
 uploaded part, and compares bytes and SHA-256 before writing a deterministic
 receipt. Preserve the receipt as release evidence.
 
@@ -92,7 +98,10 @@ Hyperdrive -> Workers VPC service -> Cloudflare Tunnel -> 127.0.0.1:5434
 Do not create a public PostgreSQL listener or public DNS origin. The tunnel is
 outbound, the VPC service uses TCP/PostgreSQL with `verify_full`, and
 Hyperdrive connects as `mcp_runtime` with a bounded origin-connection limit.
-Retain the previous Supabase Hyperdrive ID as the rollback target.
+During the Neon cutover, retain immutable Worker version
+`bfb184ec-dc18-4b63-aab0-30c320b17cf7` with Hetzner Hyperdrive
+`5fd47b059f824188998ad4ce9dc4503c` as the rollback pair. The older Supabase
+configuration is not a Gate 5 rollback target.
 
 ## WorkOS
 
@@ -104,6 +113,10 @@ The Worker validates issuer, JWKS signature, expiration, and exact audience.
 The attended verifier stores OAuth state and tokens only in memory.
 
 ## Staged release
+
+DMV staging and promotion are post-approval operations. Until the owner
+explicitly approves publication, stop after the local bundle/audit steps; the
+deployment helpers fail closed without the post-approval marker.
 
 ```powershell
 cd worker
@@ -118,7 +131,7 @@ $env:MCP_AUTH_SERVER_URL="https://mcp.quoindata.com/mcp"
 node scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node scripts\promote-cloudflare.mjs
-node scripts\verify-live.mjs 0.4.10
+node scripts\verify-live.mjs 0.4.11
 node scripts\verify-authenticated-mcp.mjs
 ```
 
@@ -141,7 +154,8 @@ previous Worker version if post-promotion verification fails.
   justify a RAM upgrade.
 - The exact zero-traffic Worker candidate passes attended OAuth and all 15 MCP
   tools before promotion.
-- Previous Worker and Supabase Hyperdrive identifiers are recorded.
+- The immutable pre-candidate Worker and Hetzner Hyperdrive identifiers are
+  recorded together.
 - Git contains no credentials, private keys, dumps, generated source data, or
   secret-bearing reports.
 - The reviewed commit and matching release tag are pushed and final production

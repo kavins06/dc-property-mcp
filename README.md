@@ -36,8 +36,7 @@ rate-limit bindings, and WorkOS AuthKit OAuth. The WorkOS production
 environment allows public email/password sign-up and supports both Client ID
 Metadata Document and Dynamic Client Registration.
 
-The isolated PostgreSQL 18 production cluster on the shared Hetzner VM
-currently contains:
+The protected PostgreSQL 18 production database on Neon currently contains:
 
 - 221,263 current D.C. property-tax accounts
 - 2025 prior, 2026 current, and 2027 proposed assessment values on each
@@ -51,7 +50,7 @@ currently contains:
 - 142,700 searchable MAR addresses, 238,561 official address-to-parcel links,
   and 291,896 searchable residential units
 
-The MCP exposes 15 read-only tools:
+The MCP exposes 22 read-only tools:
 
 - identity and discovery: `resolve_property`, `resolve_properties_batch`, and
   `search_properties`
@@ -63,6 +62,12 @@ The MCP exposes 15 read-only tools:
   `get_inspection_and_enforcement_history`, and
   `get_building_and_land_profile`
 - evidence and semantic guidance: `get_source_evidence` and `describe_data`
+- national routing and availability: `list_national_jurisdictions`,
+  `list_national_subjurisdictions`, `get_national_jurisdiction_availability`,
+  `resolve_national_property`, `get_national_property`,
+  `get_national_building`, and `search_national_properties`. D.C. remains on
+  the legacy tools; unpublished Maryland and Virginia jurisdictions return an
+  explicit unavailable response.
 
 ### Tool input contract
 
@@ -89,7 +94,7 @@ is not already certain. The server advertises these exact bounded inputs:
 | `describe_data` | Optional `question`, at most 500 characters |
 
 The runtime schemas in [`worker/src/server.ts`](worker/src/server.ts) are
-authoritative. All 15 tools carry read-only, non-destructive, idempotent
+authoritative. All 22 tools carry read-only, non-destructive, idempotent
 annotations. Responses are bounded to 768 KiB; page through returned cursors
 instead of requesting an unbounded export.
 
@@ -156,6 +161,10 @@ double snapshot when current regulatory pointers already exist.
 
 Worker validation and deployment:
 
+> **DMV release boundary:** validation and bundling are allowed locally, but do
+> not run either deployment command until the owner explicitly approves DMV
+> publication. Both helpers fail closed without the post-approval marker.
+
 ```powershell
 cd worker
 npm run check
@@ -167,7 +176,7 @@ $env:MCP_AUTH_SERVER_URL="https://mcp.quoindata.com/mcp"
 node ..\scripts\verify-authenticated-mcp.mjs <candidate-preview-url>/mcp
 Remove-Item Env:\MCP_AUTH_SERVER_URL
 node --env-file=..\.env.hosted ..\scripts\promote-cloudflare.mjs
-node ..\scripts\verify-live.mjs 0.4.10
+node ..\scripts\verify-live.mjs 0.4.11
 node ..\scripts\verify-authenticated-mcp.mjs
 ```
 
